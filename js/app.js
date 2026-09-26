@@ -1,30 +1,18 @@
 // --- 状態管理 (State) ---
         let players = [
-            { id: 'p1', key: '1', name: 'プレイヤー1', buttonColor: 'red', correct: 0, incorrect: 0, status: 'active' }, // status: active, win, lose
-            { id: 'p2', key: '2', name: 'プレイヤー2', buttonColor: 'blue', correct: 0, incorrect: 0, status: 'active' },
-            { id: 'p3', key: '3', name: 'プレイヤー3', buttonColor: 'green', correct: 0, incorrect: 0, status: 'active' },
-            { id: 'p4', key: '4', name: 'プレイヤー4', buttonColor: 'yellow', correct: 0, incorrect: 0, status: 'active' }
+            { id: 'p1', key: '1', name: 'プレイヤー1', correct: 0, incorrect: 0, status: 'active' }, // status: active, win, lose
+            { id: 'p2', key: '2', name: 'プレイヤー2', correct: 0, incorrect: 0, status: 'active' },
+            { id: 'p3', key: '3', name: 'プレイヤー3', correct: 0, incorrect: 0, status: 'active' },
+            { id: 'p4', key: '4', name: 'プレイヤー4', correct: 0, incorrect: 0, status: 'active' }
         ];
         let readerId = 'p1';
         let waitingForPlayerKeyId = '';
         let matchHistory = [];
 
-        const buttonColors = [
-            { id: 'red', label: '赤', key: '1', hex: '#f43f5e' },
-            { id: 'blue', label: '青', key: '2', hex: '#3b82f6' },
-            { id: 'green', label: '緑', key: '3', hex: '#10b981' },
-            { id: 'yellow', label: '黄', key: '4', hex: '#f59e0b' }
-        ];
-
-        function getButtonColorInfo(colorId, index = 0) {
-            return buttonColors.find(color => color.id === colorId) || buttonColors[index % buttonColors.length];
-        }
-
-        function ensureButtonColors() {
+        function ensurePlayerKeys() {
             players.forEach((player, index) => {
-                const colorInfo = getButtonColorInfo(player.buttonColor, index);
-                player.buttonColor = colorInfo.id;
-                if (!player.key) player.key = colorInfo.key;
+                delete player.buttonColor;
+                if (!player.key) player.key = String(index % 4 + 1);
             });
         }
 
@@ -34,7 +22,8 @@
             reset: ' ' // space
         };
 
-        let mode = 'single'; // 'single' or 'endless'
+        let mode = LiliceQuizRules.answerModes[0].id;
+        const missLimitRule = LiliceQuizRules.getMissLimitRule(LiliceQuizRules.defaultMissLimitRule);
         let winCondition = 3;
         let loseCondition = 2;
 
@@ -46,13 +35,14 @@
         let isScoreEditMode = false; // 得点編集モード
 
         let soundVolumes = {
-            buzzer: 1.0,
-            correct: 1.0,
-            incorrect: 1.0,
-            win: 1.0,
-            lose: 1.0,
-            reach: 1.0
+            buzzer: 0.5,
+            correct: 0.5,
+            incorrect: 0.5,
+            win: 0.5,
+            lose: 0.5,
+            reach: 0.5
         };
+        const SOUND_VOLUME_DEFAULTS_VERSION = 1;
 
         const sounds = {
             buzzer: null,
@@ -139,29 +129,41 @@
 
         function saveAppState() {
             const state = {
-                players, readerId, systemKeys, mode, winCondition, loseCondition, soundVolumes, matchHistory
+                players, readerId, systemKeys, mode, winCondition, loseCondition, soundVolumes,
+                soundVolumeDefaultsVersion: SOUND_VOLUME_DEFAULTS_VERSION,
+                matchHistory
             };
             localStorage.setItem('LiliceQuizState', JSON.stringify(state));
         }
 
         function loadAppState() {
             const saved = localStorage.getItem('LiliceQuizState');
+            let soundVolumesMigrated = false;
             if (saved) {
                 try {
                     const state = JSON.parse(saved);
                     if (state.players) players = state.players;
-                    if (state.readerId) readerId = state.readerId;
+                    if (Object.prototype.hasOwnProperty.call(state, 'readerId')) readerId = state.readerId;
                     if (state.systemKeys) systemKeys = state.systemKeys;
-                    if (state.mode) mode = state.mode;
+                    if (LiliceQuizRules.answerModes.some(rule => rule.id === state.mode)) mode = state.mode;
                     if (state.winCondition) winCondition = state.winCondition;
                     if (state.loseCondition) loseCondition = state.loseCondition;
-                    if (state.soundVolumes) soundVolumes = { ...soundVolumes, ...state.soundVolumes };
+                    if (state.soundVolumes) {
+                        soundVolumes = { ...soundVolumes, ...state.soundVolumes };
+                        if (state.soundVolumeDefaultsVersion !== SOUND_VOLUME_DEFAULTS_VERSION) {
+                            Object.keys(soundVolumes).forEach(type => {
+                                if (soundVolumes[type] === 1) soundVolumes[type] = 0.5;
+                            });
+                            soundVolumesMigrated = true;
+                        }
+                    }
                     if (state.matchHistory) matchHistory = state.matchHistory;
                 } catch (e) {
                     console.error('Failed to load state', e);
                 }
             }
-            ensureButtonColors();
+            ensurePlayerKeys();
+            if (soundVolumesMigrated) saveAppState();
         }
 
         function renderHistory() {
@@ -200,19 +202,34 @@
         function applyStateToUI() {
             ui.winScoreInput.value = winCondition;
             ui.loseScoreInput.value = loseCondition;
-            if (mode === 'single') {
-                ui.modeSingle.className = 'flex-1 py-1 text-xs font-bold rounded bg-cyan-600 text-white';
-                ui.modeEndless.className = 'flex-1 py-1 text-xs font-bold rounded text-slate-400 hover:text-white';
-            } else {
-                ui.modeEndless.className = 'flex-1 py-1 text-xs font-bold rounded bg-cyan-600 text-white';
-                ui.modeSingle.className = 'flex-1 py-1 text-xs font-bold rounded text-slate-400 hover:text-white';
-            }
+            document.getElementById('rule-summary-mode').textContent = LiliceQuizRules.getAnswerMode(mode).label;
+            document.getElementById('rule-summary-win').textContent = winCondition;
+            document.getElementById('rule-summary-lose-label').textContent = '失格';
+            document.getElementById('rule-summary-lose').textContent = loseCondition;
+            const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
+            const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+            ui.answerModeOptions.querySelectorAll('[data-answer-mode]').forEach(button => {
+                button.className = button.dataset.answerMode === mode ? modeActiveClass : modeInactiveClass;
+            });
             soundTypes.forEach(type => {
                 const volSlider = document.getElementById(`vol-${type}`);
                 if (volSlider && soundVolumes[type] !== undefined) {
                     volSlider.value = soundVolumes[type];
                 }
             });
+        }
+
+        function renderAnswerModeOptions() {
+            const inactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+            const buttons = LiliceQuizRules.answerModes.map(rule => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.answerMode = rule.id;
+                button.className = inactiveClass;
+                button.textContent = rule.label;
+                return button;
+            });
+            ui.answerModeOptions.replaceChildren(...buttons);
         }
 
         // --- Web Audio API (フォールバック・デフォルト音用) ---
@@ -457,8 +474,7 @@
             btnIncorrect: document.getElementById('btn-incorrect'),
             btnReset: document.getElementById('btn-reset'),
             playerList: document.getElementById('player-list'),
-            modeSingle: document.getElementById('mode-single'),
-            modeEndless: document.getElementById('mode-endless'),
+            answerModeOptions: document.getElementById('answer-mode-options'),
             winScoreInput: document.getElementById('win-condition'),
             loseScoreInput: document.getElementById('lose-condition'),
             settingsModal: document.getElementById('settings-modal'),
@@ -469,8 +485,40 @@
             btnCloseResult: document.getElementById('btn-close-result'),
             btnUndo: document.getElementById('btn-undo'),
             btnToggleEditScore: document.getElementById('btn-toggle-edit-score'),
-            btnResetScore: document.getElementById('btn-reset-score')
+            btnResetScore: document.getElementById('btn-reset-score'),
+            ruleSettingsModal: document.getElementById('rule-settings-modal')
         };
+
+        ui.playerList.addEventListener('click', event => {
+            const keyButton = event.target.closest('.btn-player-key');
+            if (keyButton) {
+                event.stopPropagation();
+                waitingForPlayerKeyId = keyButton.dataset.id;
+                updateDisplay();
+                return;
+            }
+
+            const scoreButton = event.target.closest('.btn-score-edit');
+            if (!scoreButton || !isScoreEditMode) return;
+
+            saveState();
+            const player = players.find(item => item.id === scoreButton.dataset.id);
+            if (!player) return;
+
+            const value = parseInt(scoreButton.dataset.val);
+            if (scoreButton.dataset.type === 'correct') {
+                player.correct = Math.max(0, player.correct + value);
+                if (player.correct >= winCondition) player.status = 'win';
+                else if (missLimitRule !== LiliceQuizRules.missLimitRules.eliminate || player.incorrect < loseCondition) player.status = 'active';
+            } else if (scoreButton.dataset.type === 'incorrect') {
+                player.incorrect = Math.max(0, player.incorrect + value);
+                if (missLimitRule === LiliceQuizRules.missLimitRules.eliminate && player.incorrect >= loseCondition) player.status = 'lose';
+                else if (player.correct < winCondition) player.status = 'active';
+            }
+
+            updateDisplay();
+            saveAppState();
+        });
 
         // --- コアロジック ---
 
@@ -554,7 +602,9 @@
                 // 解答中も押せばキューに入る (2着以降)
                 const pressedKey = e.key.toLowerCase();
                 const player = players.find(p => p.key === pressedKey && p.id !== readerId);
-                if (player && player.status === 'active' && !queue.includes(player.id)) {
+                const modeRule = LiliceQuizRules.getAnswerMode(mode);
+                const queueHasRoom = modeRule.queueLimit === null || queue.length < modeRule.queueLimit;
+                if (player && player.status === 'active' && !queue.includes(player.id) && queueHasRoom) {
                     e.preventDefault();
                     queue.push(player.id);
                     updateDisplay();
@@ -619,17 +669,21 @@
             playSound('incorrect');
 
             if (p.incorrect >= loseCondition) {
-                p.status = 'lose';
-                setTimeout(() => {
-                    playSound('lose');
-                    showResultOverlay(p.name, 'DISQUALIFIED', 'text-rose-500');
-                }, 500);
+                const missResult = missLimitRule.onLimit(p);
+                if (missResult === 'eliminated') {
+                    setTimeout(() => {
+                        playSound('lose');
+                        showResultOverlay(p.name, 'DISQUALIFIED', 'text-rose-500');
+                    }, 500);
+                }
             } else if (p.incorrect === loseCondition - 1 && loseCondition > 1) {
                 // 飛びリーチ(失格まであと1)に到達した瞬間
                 showCutin('DANGER!', 'danger');
             }
 
-            if (mode === 'single') {
+            const modeRule = LiliceQuizRules.getAnswerMode(mode);
+            const hasNextAnswerer = currentAnsweringIndex + 1 < queue.length;
+            if (modeRule.incorrectAction === 'end' || (modeRule.incorrectAction === 'advance-if-queued' && !hasNextAnswerer)) {
                 // シングルチャンス: 間違えたらその問題は終了
                 resetBuzzer(false);
             } else {
@@ -637,10 +691,12 @@
                 currentAnsweringIndex++;
                 if (currentAnsweringIndex < queue.length) {
                     setTimeout(() => playSound('buzzer'), 300); // 次の人が鳴る
-                } else {
+                } else if (modeRule.incorrectAction === 'advance') {
                     // 解答者がもういない場合、待機状態にする
                     isAcceptingInputs = false;
                     currentAnsweringIndex = -1;
+                } else {
+                    resetBuzzer(false);
                 }
             }
             
@@ -733,7 +789,7 @@
         }
 
         function selectReader(nextReaderId) {
-            if (!players.some(player => player.id === nextReaderId) || nextReaderId === readerId) return;
+            if ((nextReaderId && !players.some(player => player.id === nextReaderId)) || nextReaderId === readerId) return;
 
             saveState();
             readerId = nextReaderId;
@@ -747,13 +803,22 @@
             if (!container) return;
 
             container.innerHTML = '';
+            const noReaderButton = document.createElement('button');
+            noReaderButton.className = 'px-3 py-2 rounded border-2 text-sm font-bold transition';
+            noReaderButton.classList.add(readerId === '' ? 'border-amber-300' : 'border-transparent');
+            noReaderButton.classList.add('bg-slate-800');
+            noReaderButton.textContent = 'なし';
+            noReaderButton.title = '読み手なしに設定';
+            noReaderButton.addEventListener('click', () => selectReader(''));
+            container.appendChild(noReaderButton);
+
             players.forEach(player => {
                 const button = document.createElement('button');
                 button.className = 'px-4 py-2 rounded border-2 text-sm font-bold transition';
                 const isReader = player.id === readerId;
                 button.classList.add(isReader ? 'border-amber-300' : 'border-transparent');
                 button.classList.add('bg-slate-800');
-                button.textContent = `${player.name} (${getDisplayKey(player.key).toUpperCase()})`;
+                button.textContent = player.name;
                 button.title = '読み手に設定';
                 button.addEventListener('click', () => selectReader(player.id));
                 container.appendChild(button);
@@ -829,6 +894,7 @@
             // 人数に応じて文字サイズを動的に決定 (プロポーショナル化)
             // ▼▼全体的にサイズを一段階小さくしました▼▼
             const scoringPlayers = players.filter(player => player.id !== readerId);
+            const compactPlayerList = players.length >= 5;
             let nameSize = 'text-2xl';
             let scoreSize = 'text-4xl';
             
@@ -840,6 +906,13 @@
                 nameSize = 'text-2xl'; scoreSize = 'text-4xl'; 
             } else {
                 nameSize = 'text-xl'; scoreSize = 'text-3xl'; 
+            }
+            if (compactPlayerList) {
+                nameSize = 'text-lg';
+                scoreSize = 'text-4xl';
+                ui.playerList.className = 'flex-1 grid grid-cols-2 content-start gap-2 overflow-y-auto pr-1';
+            } else {
+                ui.playerList.className = 'flex-1 flex flex-col gap-3 overflow-y-auto pr-1';
             }
             // ▲▲ここまで▲▲
 
@@ -873,34 +946,47 @@
                     const isFirst = qIndex === currentAnsweringIndex;
                     const orderStr = isFirst ? '1st' : `${qIndex - currentAnsweringIndex + 1}nd`;
                     const badgeClass = isFirst ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_#06b6d4]' : 'bg-slate-600 text-white border border-slate-500';
-                    orderBadge = `<span class="ml-3 px-3 py-1 rounded-full text-lg font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
+                    const badgeSize = compactPlayerList ? 'ml-1 px-1.5 py-0.5 text-xs' : 'ml-3 px-3 py-1 text-lg';
+                    orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
 
                 // flex-1 で縦幅を均等に伸ばす。min-h-0 で潰れを許可
-                div.className = `relative p-2 rounded-lg flex justify-between items-center shadow-lg transition-all flex-1 min-h-[60px] ${statusClass}`;
-                const keyButton = `<button class="btn-player-key absolute right-1 top-1 px-2 py-1 bg-slate-700/80 hover:bg-slate-600 border border-slate-500 rounded text-xs leading-tight text-cyan-300 font-bold whitespace-nowrap ${waitingForPlayerKeyId === p.id ? 'ring-2 ring-cyan-300 animate-pulse' : ''}" data-id="${p.id}" title="キーを変更">${waitingForPlayerKeyId === p.id ? '入力中' : getDisplayKey(p.key).toUpperCase()}</button>`;
+                const playerRowSize = compactPlayerList ? 'p-2 rounded-md min-h-[80px]' : 'p-2 rounded-lg min-h-[60px]';
+                div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass}`;
+                const isWaitingForPlayerKey = waitingForPlayerKeyId === p.id;
+                const keyButtonSize = isWaitingForPlayerKey
+                    ? (compactPlayerList ? 'h-8 min-w-[3.5rem] px-1 text-xs' : 'h-10 min-w-[4rem] px-2 text-sm')
+                    : (compactPlayerList ? 'h-8 w-10 text-sm' : 'h-10 w-12 text-lg');
+                const keyButton = `<button class="btn-player-key ${keyButtonSize} shrink-0 inline-flex items-center justify-center bg-slate-700/70 hover:bg-slate-600 border border-slate-500 rounded-md leading-none text-cyan-200 font-bold whitespace-nowrap ${isWaitingForPlayerKey ? 'ring-2 ring-cyan-300 animate-pulse' : ''}" data-id="${p.id}" title="キーを変更">${isWaitingForPlayerKey ? '入力中' : getDisplayKey(p.key).toUpperCase()}</button>`;
                 
                 if (isScoreEditMode) {
                     // 編集モードUI
+                    const editNameSize = compactPlayerList ? 'text-base' : 'text-xl';
+                    const editControlSize = compactPlayerList ? 'px-1' : 'px-2';
                     div.innerHTML = `
-                        ${keyButton}
-                        <span class="text-xl font-bold truncate flex-1 mr-2 flex items-center">${statusIcon}${p.name}${orderBadge}</span>
+                        <div class="flex min-w-0 flex-1 items-center gap-2 mr-2">
+                            ${keyButton}
+                            <span class="${editNameSize} font-bold truncate min-w-0 max-w-full flex items-center">${statusIcon}${p.name}${orderBadge}</span>
+                        </div>
                         <div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
-                            <button class="btn-score-edit px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
                             <span class="text-emerald-400 w-10 text-center font-bold">〇${p.correct}</span>
-                            <button class="btn-score-edit px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
                             
-                            <button class="btn-score-edit px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
                             <span class="text-rose-400 w-10 text-center font-bold">✖${p.incorrect}</span>
-                            <button class="btn-score-edit px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
                         </div>
                     `;
                 } else {
                     // 通常表示UI (可変サイズ適用)
+                    const scoreGap = compactPlayerList ? 'gap-1.5' : 'gap-6';
                     div.innerHTML = `
-                        ${keyButton}
-                        <span class="${nameSize} font-bold truncate flex-1 mr-4 drop-shadow-md flex items-center">${statusIcon}${p.name}${orderBadge}</span>
-                        <div class="flex gap-6 font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
+                        <div class="flex min-w-0 flex-1 items-center gap-2 mr-2">
+                            ${keyButton}
+                            <span class="${nameSize} font-bold truncate min-w-0 max-w-full drop-shadow-md flex items-center">${statusIcon}${p.name}${orderBadge}</span>
+                        </div>
+                        <div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
                             <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${p.correct}</span>
                             <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${p.incorrect}</span>
                         </div>
@@ -909,40 +995,6 @@
                 ui.playerList.appendChild(div);
             });
 
-            document.querySelectorAll('.btn-player-key').forEach(button => {
-                button.addEventListener('click', event => {
-                    event.stopPropagation();
-                    waitingForPlayerKeyId = event.currentTarget.dataset.id;
-                    updateDisplay();
-                });
-            });
-
-            // 編集モード用のイベントリスナー設定
-            if (isScoreEditMode) {
-                document.querySelectorAll('.btn-score-edit').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        saveState(); // 編集前に状態保存
-                        const id = e.target.dataset.id;
-                        const type = e.target.dataset.type; // 'correct' or 'incorrect'
-                        const val = parseInt(e.target.dataset.val);
-                        
-                        const player = players.find(x => x.id === id);
-                        if (player) {
-                            if (type === 'correct') {
-                                player.correct = Math.max(0, player.correct + val);
-                                if(player.correct >= winCondition) player.status = 'win';
-                                else if(player.incorrect < loseCondition) player.status = 'active';
-                            } else if (type === 'incorrect') {
-                                player.incorrect = Math.max(0, player.incorrect + val);
-                                if(player.incorrect >= loseCondition) player.status = 'lose';
-                                else if(player.correct < winCondition) player.status = 'active';
-                            }
-                            updateDisplay();
-                            saveAppState(); // 更新後にも保存
-                        }
-                    });
-                });
-            }
         }
 
         function showResultOverlay(name, title, colorClass) {
@@ -969,25 +1021,40 @@
         });
 
         function setMode(m) {
+            if (!LiliceQuizRules.answerModes.some(rule => rule.id === m)) return;
             mode = m;
             applyStateToUI();
             resetBuzzer();
             saveAppState(); // 変更を保存
         }
-        ui.modeSingle.addEventListener('click', () => setMode('single'));
-        ui.modeEndless.addEventListener('click', () => setMode('endless'));
+
+        ui.answerModeOptions.addEventListener('click', event => {
+            const button = event.target.closest('[data-answer-mode]');
+            if (button) setMode(button.dataset.answerMode);
+        });
 
         ui.winScoreInput.addEventListener('change', (e) => {
             winCondition = parseInt(e.target.value) || 3;
             e.target.value = winCondition;
+            applyStateToUI();
             updateDisplay();
             saveAppState();
         });
         ui.loseScoreInput.addEventListener('change', (e) => {
             loseCondition = parseInt(e.target.value) || 2;
             e.target.value = loseCondition;
+            applyStateToUI();
             updateDisplay();
             saveAppState();
+        });
+
+        document.getElementById('btn-rule-settings').addEventListener('click', () => {
+            applyStateToUI();
+            ui.ruleSettingsModal.classList.remove('hidden');
+        });
+
+        document.getElementById('btn-close-rule-settings').addEventListener('click', () => {
+            ui.ruleSettingsModal.classList.add('hidden');
         });
 
         // --- 設定モーダル ---
@@ -1016,7 +1083,7 @@
                 const nameInput = row.querySelector('.player-name-input');
                 const idx = parseInt(nameInput.dataset.index);
                 const p = editingPlayers[idx];
-                if (!p.key) p.key = getButtonColorInfo(p.buttonColor, idx).key;
+                if (!p.key) p.key = String(idx % 4 + 1);
                 
                 if (!p.name || p.name.trim() === '') {
                     hasError = true;
@@ -1031,7 +1098,9 @@
 
             players = newPlayers;
             systemKeys = { ...editingSystemKeys };
-            readerId = newPlayers[0]?.id || '';
+            if (readerId && !newPlayers.some(player => player.id === readerId)) {
+                readerId = newPlayers[0]?.id || '';
+            }
             ui.settingsModal.classList.add('hidden');
             updateDisplay();
             updateButtonLabels();
@@ -1041,7 +1110,7 @@
 
         document.getElementById('btn-add-player').addEventListener('click', () => {
             const newId = `new_${Date.now()}`;
-            editingPlayers.push({ id: newId, name: `プレイヤー${editingPlayers.length + 1}`, key: '', buttonColor: '', correct:0, incorrect:0, status:'active' });
+            editingPlayers.push({ id: newId, name: `プレイヤー${editingPlayers.length + 1}`, key: '', correct:0, incorrect:0, status:'active' });
             renderSettingsModal();
         });
 
@@ -1134,9 +1203,10 @@
         // アプリ起動時の初期化
         async function initializeApp() {
             loadAppState();    // 設定データをロード
-            if (!players.some(player => player.id === readerId)) {
+            if (readerId && !players.some(player => player.id === readerId)) {
                 readerId = players[0]?.id || '';
             }
+            renderAnswerModeOptions();
             applyStateToUI();  // UIに反映
             
             try {
