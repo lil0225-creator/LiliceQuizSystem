@@ -1,21 +1,124 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+        :root {
+            --font-ui: 'Noto Sans JP', sans-serif;
+            --font-display: 'Orbitron', sans-serif;
+            --color-page: #0f172a;
+            --color-text: #e2e8f0;
+            --color-panel: rgba(30, 41, 59, 0.7);
+            --color-panel-border: #38bdf8;
+        }
         
         body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #0f172a;
-            color: #e2e8f0;
+            font-family: var(--font-ui);
+            background-color: var(--color-page);
+            color: var(--color-text);
             user-select: none;
             overflow: hidden;
         }
         .font-Lilice {
-            font-family: 'Orbitron', sans-serif;
+            font-family: var(--font-display);
+        }
+
+        .player-name-content {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 0 0.12em;
+            min-height: 1.35em;
+            line-height: 1.25;
+        }
+
+        .player-name-left {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .player-name-key-target {
+            border: 0;
+            color: inherit;
+            background: transparent;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .player-name-key-target:hover {
+            background: rgba(8, 145, 178, 0.12);
+            outline: 2px solid #67e8f9;
+            outline-offset: -2px;
+        }
+
+        .player-assigned-key {
+            flex: none;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            border-radius: 4px;
+            background: rgba(15, 23, 42, 0.55);
+            padding: 3px 7px;
+            color: #cbd5e1;
+            font-family: var(--font-display);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .player-name-text {
+            display: flex;
+            flex: 1 1 0%;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            min-width: 0;
+            font-family: var(--font-ui);
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        .reader-name-button {
+            font-family: var(--font-ui);
+            line-height: 1.25;
+            text-align: center;
+        }
+
+        .player-status-icon {
+            display: inline-flex;
+            flex: none;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .player-name-plain {
+            flex: 0 1 auto;
+            min-width: 0;
+            font-family: var(--font-ui);
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
+
+        .player-emoji {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+            font-variant-emoji: emoji;
+            width: 1.15em;
+            height: 1.15em;
+            font-size: 1.15em;
+            line-height: 1;
+            vertical-align: middle;
         }
         
         .Lilice-panel {
-            background: rgba(30, 41, 59, 0.7);
-            border: 1px solid #38bdf8;
+            background: var(--color-panel);
+            border: 1px solid var(--color-panel-border);
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) inset;
-            backdrop-filter: blur(10px);
+        }
+
+        .backdrop-blur-sm,
+        .backdrop-blur-md {
+            backdrop-filter: none !important;
         }
 
         .Lilice-btn {
@@ -69,3 +172,23 @@
             50% { box-shadow: 0 0 40px rgba(244,63,94,0.8) inset, 0 0 40px rgba(244,63,94,0.8); border-color: rgba(244,63,94,1); }
         }
         .effect-danger { animation: pulse-danger 1s infinite; }
+
+        body.lightweight-mode *,
+        body.lightweight-mode *::before,
+        body.lightweight-mode *::after {
+            animation: none !important;
+            backdrop-filter: none !important;
+            box-shadow: none !important;
+            filter: none !important;
+            text-shadow: none !important;
+            transition: none !important;
+        }
+
+        @keyframes lightweight-cutin {
+            from { opacity: 0; transform: translateY(0.75rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        body.lightweight-mode .animate-cutin {
+            animation: lightweight-cutin 0.4s ease-out forwards !important;
+        }

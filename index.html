@@ -45,7 +45,7 @@
                 <div class="absolute top-4 left-4 text-cyan-500/50 font-Lilice text-sm">CURRENT ANSWERER</div>
                 
                 <div id="status-display" class="text-4xl text-slate-500 font-bold mb-4">WAITING...</div>
-                <div id="current-answerer" class="text-6xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-cyan-300 hidden">
+                <div id="current-answerer" class="text-6xl md:text-8xl font-bold text-cyan-100 drop-shadow-[0_0_18px_rgba(34,211,238,0.35)] hidden">
                     PLAYER 1
                 </div>
             </div>
@@ -72,12 +72,10 @@
         <div class="w-[600px] flex flex-col gap-4">
             
             <!-- ルール設定 -->
-            <div class="Lilice-panel rounded-xl p-4 flex-shrink-0">
+            <section id="rule-summary" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="rule-settings-modal" aria-label="ルール設定を開く" class="Lilice-panel cursor-pointer rounded-xl p-4 flex-shrink-0 transition-colors hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
                 <div class="flex items-center justify-between mb-2 border-b border-cyan-800/80 pb-1">
                     <h2 class="font-Lilice text-cyan-400 text-sm">RULES</h2>
-                    <button id="btn-rule-settings" class="inline-flex items-center gap-2 rounded-md border border-cyan-400/70 bg-cyan-950/70 px-4 py-2 text-sm font-bold text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:bg-cyan-900/80">
-                        <span aria-hidden="true">⚙</span> 設定
-                    </button>
+                    <span class="text-[10px] text-slate-400">クリックで変更</span>
                 </div>
                 <div class="grid grid-cols-[1fr_1.5fr_1.5fr] items-stretch gap-3 text-center">
                     <div class="aspect-square self-center rounded-lg border border-cyan-300/80 bg-cyan-900/70 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_12px_rgba(8,145,178,0.12)] flex flex-col items-center justify-center">
@@ -93,40 +91,18 @@
                         <span class="mt-1 block font-Lilice text-5xl font-bold text-white"><span id="rule-summary-lose">2</span><span class="ml-1 text-xl font-sans">バツ</span></span>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- プレイヤー一覧（スコア） - メインで大きく表示 -->
             <div class="Lilice-panel rounded-xl p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
                 <div class="flex justify-between items-center mb-2 border-b border-cyan-800 pb-1 flex-shrink-0">
-                    <h2 class="font-Lilice text-cyan-400 text-sm">PLAYERS &amp; SCORE</h2>
+                    <div class="min-w-0">
+                        <h2 class="font-Lilice text-cyan-400 text-sm">PLAYERS &amp; SCORE</h2>
+                        <p class="mt-0.5 text-xs text-slate-400">名前をクリックしてキー設定</p>
+                    </div>
                     <button id="btn-toggle-edit-score" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs transition text-white border border-slate-500 outline-none">✏️ 編集</button>
                 </div>
-                <!-- 縦幅いっぱいに広がるように flex-1 を指定 -->
-                <div id="player-list" class="flex-1 flex flex-col gap-3 overflow-y-auto pr-1"><div class="p-2 rounded-lg flex justify-between items-center shadow-lg transition-all flex-1 min-h-[60px] bg-slate-800 text-slate-300 border-2 border-transparent">
-                        <span class="text-3xl font-bold truncate flex-1 mr-4 drop-shadow-md flex items-center">プレイヤー1</span>
-                        <div class="flex gap-6 font-Lilice text-5xl font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇0</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖0</span>
-                        </div>
-                    </div><div class="p-2 rounded-lg flex justify-between items-center shadow-lg transition-all flex-1 min-h-[60px] bg-slate-800 text-slate-300 border-2 border-transparent">
-                        <span class="text-3xl font-bold truncate flex-1 mr-4 drop-shadow-md flex items-center">プレイヤー2</span>
-                        <div class="flex gap-6 font-Lilice text-5xl font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇0</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖0</span>
-                        </div>
-                    </div><div class="p-2 rounded-lg flex justify-between items-center shadow-lg transition-all flex-1 min-h-[60px] bg-slate-800 text-slate-300 border-2 border-transparent">
-                        <span class="text-3xl font-bold truncate flex-1 mr-4 drop-shadow-md flex items-center">プレイヤー3</span>
-                        <div class="flex gap-6 font-Lilice text-5xl font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇0</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖0</span>
-                        </div>
-                    </div><div class="p-2 rounded-lg flex justify-between items-center shadow-lg transition-all flex-1 min-h-[60px] bg-slate-800 text-slate-300 border-2 border-transparent">
-                        <span class="text-3xl font-bold truncate flex-1 mr-4 drop-shadow-md flex items-center">プレイヤー4</span>
-                        <div class="flex gap-6 font-Lilice text-5xl font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇0</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖0</span>
-                        </div>
-                    </div></div>
+                <div id="player-list" class="flex-1 flex flex-col gap-3 overflow-y-auto pr-1" aria-live="polite"></div>
             </div>
             
         </div>
@@ -236,6 +212,14 @@
                             </div>
                         </div>
                     </div>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-Lilice text-cyan-300 mb-2 border-b border-slate-700 pb-1">DISPLAY</h3>
+                    <label for="lightweight-mode" class="flex items-center justify-between gap-4 rounded-lg border border-slate-600 bg-slate-700/40 p-3">
+                        <span class="text-sm font-bold text-white">軽量モード</span>
+                        <input id="lightweight-mode" type="checkbox" class="h-5 w-5 accent-cyan-500">
+                    </label>
                 </section>
 
                 <!-- システムキー設定 -->

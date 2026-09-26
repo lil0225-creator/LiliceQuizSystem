@@ -24,6 +24,7 @@
 
         let mode = LiliceQuizRules.answerModes[0].id;
         const missLimitRule = LiliceQuizRules.getMissLimitRule(LiliceQuizRules.defaultMissLimitRule);
+        let lightweightMode = false;
         let winCondition = 3;
         let loseCondition = 2;
 
@@ -129,7 +130,7 @@
 
         function saveAppState() {
             const state = {
-                players, readerId, systemKeys, mode, winCondition, loseCondition, soundVolumes,
+                players, readerId, systemKeys, mode, lightweightMode, winCondition, loseCondition, soundVolumes,
                 soundVolumeDefaultsVersion: SOUND_VOLUME_DEFAULTS_VERSION,
                 matchHistory
             };
@@ -146,6 +147,7 @@
                     if (Object.prototype.hasOwnProperty.call(state, 'readerId')) readerId = state.readerId;
                     if (state.systemKeys) systemKeys = state.systemKeys;
                     if (LiliceQuizRules.answerModes.some(rule => rule.id === state.mode)) mode = state.mode;
+                    if (typeof state.lightweightMode === 'boolean') lightweightMode = state.lightweightMode;
                     if (state.winCondition) winCondition = state.winCondition;
                     if (state.loseCondition) loseCondition = state.loseCondition;
                     if (state.soundVolumes) {
@@ -168,35 +170,72 @@
 
         function renderHistory() {
             const container = document.getElementById('history-list');
+            container.replaceChildren();
             if (matchHistory.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-center py-8">まだ戦歴がありません。</p>';
+                const emptyMessage = document.createElement('p');
+                emptyMessage.className = 'text-slate-400 text-center py-8';
+                emptyMessage.textContent = 'まだ戦歴がありません。';
+                container.appendChild(emptyMessage);
                 return;
             }
 
-            const totals = {};
+            const totals = new Map();
             matchHistory.forEach(match => match.players.forEach(record => {
-                if (!totals[record.id]) totals[record.id] = { name: record.name, correct: 0, incorrect: 0 };
-                totals[record.id].name = record.name;
-                totals[record.id].correct += record.correct;
-                totals[record.id].incorrect += record.incorrect;
+                const total = totals.get(record.id) || { name: record.name, correct: 0, incorrect: 0 };
+                total.name = record.name;
+                total.correct += record.correct;
+                total.incorrect += record.incorrect;
+                totals.set(record.id, total);
             }));
-            const totalRows = Object.values(totals).map(record => `
-                <div class="flex justify-between items-center bg-slate-700/60 rounded p-3">
-                    <span class="font-bold text-white truncate mr-4">${record.name}</span>
-                    <span class="font-Lilice text-lg whitespace-nowrap"><span class="text-emerald-400">〇${record.correct}</span><span class="text-rose-400 ml-4">✖${record.incorrect}</span></span>
-                </div>
-            `).join('');
 
-            const detailSections = [...matchHistory].reverse().map((match, index) => {
-                const rows = match.players.map(record => `
-                    <div class="flex justify-between items-center bg-slate-700/60 rounded p-3">
-                        <span class="font-bold text-white truncate mr-4">${record.name}</span>
-                        <span class="font-Lilice text-lg whitespace-nowrap"><span class="text-emerald-400">〇${record.correct}</span><span class="text-rose-400 ml-4">✖${record.incorrect}</span></span>
-                    </div>
-                `).join('');
-                return `<section><h3 class="text-cyan-300 font-bold mb-2">セット ${matchHistory.length - index} / ${match.date}</h3><div class="space-y-2">${rows}</div></section>`;
-            }).join('');
-            container.innerHTML = `<section><h3 class="text-amber-300 font-bold mb-2">累計</h3><div class="space-y-2">${totalRows}</div></section><section><h3 class="text-cyan-300 font-bold mb-2">セット別戦歴</h3><div class="space-y-4">${detailSections}</div></section>`;
+            const createSection = (title, titleClass) => {
+                const section = document.createElement('section');
+                const heading = document.createElement('h3');
+                heading.className = `${titleClass} font-bold mb-2`;
+                heading.textContent = title;
+                const rows = document.createElement('div');
+                rows.className = 'space-y-2';
+                section.append(heading, rows);
+                return { section, rows };
+            };
+
+            const appendRecord = (containerElement, record) => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-slate-700/60 rounded p-3';
+                const name = document.createElement('span');
+                name.className = 'font-bold text-white truncate mr-4';
+                name.textContent = record.name;
+                const scores = document.createElement('span');
+                scores.className = 'font-Lilice text-lg whitespace-nowrap';
+                const correct = document.createElement('span');
+                correct.className = 'text-emerald-400';
+                correct.textContent = `〇${record.correct}`;
+                const incorrect = document.createElement('span');
+                incorrect.className = 'text-rose-400 ml-4';
+                incorrect.textContent = `✖${record.incorrect}`;
+                scores.append(correct, incorrect);
+                row.append(name, scores);
+                containerElement.appendChild(row);
+            };
+
+            const totalsSection = createSection('累計', 'text-amber-300');
+            totals.forEach(record => appendRecord(totalsSection.rows, record));
+            container.appendChild(totalsSection.section);
+
+            const detailsSection = createSection('セット別戦歴', 'text-cyan-300');
+            detailsSection.rows.className = 'space-y-4';
+            [...matchHistory].reverse().forEach((match, index) => {
+                const matchSection = document.createElement('section');
+                const heading = document.createElement('h4');
+                heading.className = 'text-cyan-300 font-bold mb-2';
+                heading.textContent = `セット ${matchHistory.length - index} / ${match.date}`;
+                const rows = document.createElement('div');
+                rows.className = 'space-y-2';
+                match.players.forEach(record => appendRecord(rows, record));
+                matchSection.append(heading, rows);
+                detailsSection.rows.appendChild(matchSection);
+            });
+            container.appendChild(detailsSection.section);
         }
 
         function applyStateToUI() {
@@ -206,6 +245,8 @@
             document.getElementById('rule-summary-win').textContent = winCondition;
             document.getElementById('rule-summary-lose-label').textContent = '失格';
             document.getElementById('rule-summary-lose').textContent = loseCondition;
+            ui.lightweightModeInput.checked = lightweightMode;
+            document.body.classList.toggle('lightweight-mode', lightweightMode);
             const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
             const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
             ui.answerModeOptions.querySelectorAll('[data-answer-mode]').forEach(button => {
@@ -433,6 +474,7 @@
             updateUndoButton();
             applyStateToUI();
             saveAppState();
+            renderReaderPicker();
             // 勝ち抜け/失格UIなどが表示されていたら消す
             ui.resultOverlay.classList.add('hidden');
         }
@@ -451,6 +493,48 @@
             if (key === 'enter') return 'ENTER';
             if (key === 'escape') return 'ESC';
             return key;
+        }
+
+        function findEligiblePlayerByKey(key) {
+            return players.find(player => player.key === key && player.id !== readerId && player.status === 'active');
+        }
+
+        const playerNameSegmenter = typeof Intl.Segmenter === 'function'
+            ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+            : null;
+        const emojiSegmentPattern = /[\p{Extended_Pictographic}\p{Regional_Indicator}\u20E3]/u;
+
+        function renderPlayerName(container, name) {
+            container.replaceChildren();
+            container.classList.add('player-name-content');
+
+            const appendPlainText = text => {
+                if (!text) return;
+                const plain = document.createElement('span');
+                plain.className = 'player-name-plain';
+                plain.textContent = text;
+                container.appendChild(plain);
+            };
+
+            if (!playerNameSegmenter) {
+                appendPlainText(name);
+                return;
+            }
+
+            let plainText = '';
+            for (const { segment } of playerNameSegmenter.segment(name)) {
+                if (emojiSegmentPattern.test(segment)) {
+                    appendPlainText(plainText);
+                    plainText = '';
+                    const emoji = document.createElement('span');
+                    emoji.className = 'player-emoji';
+                    emoji.textContent = segment;
+                    container.appendChild(emoji);
+                } else {
+                    plainText += segment;
+                }
+            }
+            appendPlainText(plainText);
         }
 
         // フォーカスを完全に外すヘルパー関数
@@ -486,14 +570,16 @@
             btnUndo: document.getElementById('btn-undo'),
             btnToggleEditScore: document.getElementById('btn-toggle-edit-score'),
             btnResetScore: document.getElementById('btn-reset-score'),
-            ruleSettingsModal: document.getElementById('rule-settings-modal')
+            ruleSummary: document.getElementById('rule-summary'),
+            ruleSettingsModal: document.getElementById('rule-settings-modal'),
+            lightweightModeInput: document.getElementById('lightweight-mode')
         };
 
         ui.playerList.addEventListener('click', event => {
-            const keyButton = event.target.closest('.btn-player-key');
-            if (keyButton) {
+            const playerNameButton = event.target.closest('.player-name-key-target');
+            if (playerNameButton) {
                 event.stopPropagation();
-                waitingForPlayerKeyId = keyButton.dataset.id;
+                waitingForPlayerKeyId = playerNameButton.dataset.id;
                 updateDisplay();
                 return;
             }
@@ -534,7 +620,17 @@
                     e.preventDefault(); e.stopPropagation();
                     const key = e.key.toLowerCase();
                     if (key === 'escape') {
+                        waitingForSystemKey = null;
+                        renderSettingsModal();
                         showMessage('Escキーは使用できません。');
+                        return;
+                    }
+                    const conflictsWithPlayer = players.some(player => player.key === key);
+                    const conflictsWithSystemKey = Object.entries(editingSystemKeys).some(([type, assignedKey]) => type !== waitingForSystemKey && assignedKey === key);
+                    if (conflictsWithPlayer || conflictsWithSystemKey) {
+                        waitingForSystemKey = null;
+                        renderSettingsModal();
+                        showMessage('このキーはすでに別の操作に割り当てられています。');
                         return;
                     }
                     editingSystemKeys[waitingForSystemKey] = key;
@@ -552,6 +648,12 @@
                 if (key === 'escape') {
                     waitingForPlayerKeyId = '';
                     updateDisplay();
+                    return;
+                }
+                if (Object.values(systemKeys).includes(key)) {
+                    waitingForPlayerKeyId = '';
+                    updateDisplay();
+                    showMessage('このキーはシステム操作に割り当てられています。');
                     return;
                 }
                 assignPlayerKey(waitingForPlayerKeyId, key);
@@ -591,20 +693,18 @@
             
             // --- 早押し処理 ---
             if (isAcceptingInputs) {
-                const pressedKey = e.key.toLowerCase();
-                const player = players.find(p => p.key === pressedKey && p.id !== readerId);
-                
-                if (player && player.status === 'active' && !queue.includes(player.id)) {
+                const player = findEligiblePlayerByKey(e.key.toLowerCase());
+
+                if (player && !queue.includes(player.id)) {
                     e.preventDefault();
                     pushBuzzer(player.id);
                 }
             } else if (currentAnsweringIndex >= 0) {
                 // 解答中も押せばキューに入る (2着以降)
-                const pressedKey = e.key.toLowerCase();
-                const player = players.find(p => p.key === pressedKey && p.id !== readerId);
+                const player = findEligiblePlayerByKey(e.key.toLowerCase());
                 const modeRule = LiliceQuizRules.getAnswerMode(mode);
                 const queueHasRoom = modeRule.queueLimit === null || queue.length < modeRule.queueLimit;
-                if (player && player.status === 'active' && !queue.includes(player.id) && queueHasRoom) {
+                if (player && !queue.includes(player.id) && queueHasRoom) {
                     e.preventDefault();
                     queue.push(player.id);
                     updateDisplay();
@@ -681,18 +781,15 @@
                 showCutin('DANGER!', 'danger');
             }
 
-            const modeRule = LiliceQuizRules.getAnswerMode(mode);
             const hasNextAnswerer = currentAnsweringIndex + 1 < queue.length;
-            if (modeRule.incorrectAction === 'end' || (modeRule.incorrectAction === 'advance-if-queued' && !hasNextAnswerer)) {
-                // シングルチャンス: 間違えたらその問題は終了
+            const transition = LiliceQuizRules.getIncorrectTransition(mode, hasNextAnswerer);
+            if (transition === 'end') {
                 resetBuzzer(false);
             } else {
-                // エンドレスチャンス: 次の人へ
                 currentAnsweringIndex++;
                 if (currentAnsweringIndex < queue.length) {
                     setTimeout(() => playSound('buzzer'), 300); // 次の人が鳴る
-                } else if (modeRule.incorrectAction === 'advance') {
-                    // 解答者がもういない場合、待機状態にする
+                } else if (transition === 'advance-or-wait') {
                     isAcceptingInputs = false;
                     currentAnsweringIndex = -1;
                 } else {
@@ -814,11 +911,11 @@
 
             players.forEach(player => {
                 const button = document.createElement('button');
-                button.className = 'px-4 py-2 rounded border-2 text-sm font-bold transition';
+                button.className = 'player-name-content reader-name-button inline-flex items-center justify-center px-4 py-2 rounded border-2 text-sm font-bold transition';
                 const isReader = player.id === readerId;
                 button.classList.add(isReader ? 'border-amber-300' : 'border-transparent');
                 button.classList.add('bg-slate-800');
-                button.textContent = player.name;
+                renderPlayerName(button, player.name);
                 button.title = '読み手に設定';
                 button.addEventListener('click', () => selectReader(player.id));
                 container.appendChild(button);
@@ -872,7 +969,7 @@
                 const p = players.find(x => x.id === pid);
                 if (p) {
                     ui.statusDisplay.classList.add('hidden');
-                    ui.currentAnswerer.textContent = p.name;
+                    renderPlayerName(ui.currentAnswerer, p.name);
                     ui.currentAnswerer.classList.remove('hidden');
                     ui.currentAnswerer.classList.add('animate-flash');
                     
@@ -950,23 +1047,29 @@
                     orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
 
-                // flex-1 で縦幅を均等に伸ばす。min-h-0 で潰れを許可
                 const playerRowSize = compactPlayerList ? 'p-2 rounded-md min-h-[80px]' : 'p-2 rounded-lg min-h-[60px]';
                 div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass}`;
                 const isWaitingForPlayerKey = waitingForPlayerKeyId === p.id;
-                const keyButtonSize = isWaitingForPlayerKey
-                    ? (compactPlayerList ? 'h-8 min-w-[3.5rem] px-1 text-xs' : 'h-10 min-w-[4rem] px-2 text-sm')
-                    : (compactPlayerList ? 'h-8 w-10 text-sm' : 'h-10 w-12 text-lg');
-                const keyButton = `<button class="btn-player-key ${keyButtonSize} shrink-0 inline-flex items-center justify-center bg-slate-700/70 hover:bg-slate-600 border border-slate-500 rounded-md leading-none text-cyan-200 font-bold whitespace-nowrap ${isWaitingForPlayerKey ? 'ring-2 ring-cyan-300 animate-pulse' : ''}" data-id="${p.id}" title="キーを変更">${isWaitingForPlayerKey ? '入力中' : getDisplayKey(p.key).toUpperCase()}</button>`;
+                const assignedKeyLabel = getDisplayKey(p.key).toUpperCase();
+                const playerNameButton = (fontSize) => `
+                    <button type="button" class="player-name-key-target h-full w-full min-w-0 flex flex-col items-center justify-center rounded-md px-2 py-1 text-center transition-colors ${isWaitingForPlayerKey ? 'bg-cyan-950/40 ring-2 ring-cyan-300' : 'hover:bg-cyan-900/20'}" data-id="${p.id}" title="名前をクリックしてキーを割り当て">
+                        <span class="${fontSize} font-bold flex min-w-0 w-full items-center justify-start gap-1.5 text-left leading-tight">
+                            <span class="player-status-icon">${statusIcon.trim()}</span>
+                            <span class="player-name-text player-name-left min-w-0"></span>
+                            <span class="player-assigned-key" data-assigned-key></span>
+                            ${orderBadge}
+                        </span>
+                        ${isWaitingForPlayerKey ? '<span class="mt-1 text-[10px] font-bold text-cyan-200">キー入力中</span>' : ''}
+                    </button>
+                `;
                 
                 if (isScoreEditMode) {
                     // 編集モードUI
                     const editNameSize = compactPlayerList ? 'text-base' : 'text-xl';
                     const editControlSize = compactPlayerList ? 'px-1' : 'px-2';
                     div.innerHTML = `
-                        <div class="flex min-w-0 flex-1 items-center gap-2 mr-2">
-                            ${keyButton}
-                            <span class="${editNameSize} font-bold truncate min-w-0 max-w-full flex items-center">${statusIcon}${p.name}${orderBadge}</span>
+                        <div class="self-stretch flex min-w-0 flex-1 mr-2">
+                            ${playerNameButton(editNameSize)}
                         </div>
                         <div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
                             <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
@@ -982,15 +1085,21 @@
                     // 通常表示UI (可変サイズ適用)
                     const scoreGap = compactPlayerList ? 'gap-1.5' : 'gap-6';
                     div.innerHTML = `
-                        <div class="flex min-w-0 flex-1 items-center gap-2 mr-2">
-                            ${keyButton}
-                            <span class="${nameSize} font-bold truncate min-w-0 max-w-full drop-shadow-md flex items-center">${statusIcon}${p.name}${orderBadge}</span>
+                        <div class="self-stretch flex min-w-0 flex-1 mr-2">
+                            ${playerNameButton(nameSize)}
                         </div>
                         <div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
                             <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${p.correct}</span>
                             <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${p.incorrect}</span>
                         </div>
                     `;
+                }
+                const playerNameElement = div.querySelector('.player-name-text');
+                if (playerNameElement) renderPlayerName(playerNameElement, p.name);
+                const assignedKeyElement = div.querySelector('[data-assigned-key]');
+                if (assignedKeyElement) {
+                    assignedKeyElement.textContent = assignedKeyLabel;
+                    assignedKeyElement.title = `割り当てキー: ${assignedKeyLabel}`;
                 }
                 ui.playerList.appendChild(div);
             });
@@ -1033,6 +1142,12 @@
             if (button) setMode(button.dataset.answerMode);
         });
 
+        ui.lightweightModeInput.addEventListener('change', event => {
+            lightweightMode = event.currentTarget.checked;
+            applyStateToUI();
+            saveAppState();
+        });
+
         ui.winScoreInput.addEventListener('change', (e) => {
             winCondition = parseInt(e.target.value) || 3;
             e.target.value = winCondition;
@@ -1048,9 +1163,17 @@
             saveAppState();
         });
 
-        document.getElementById('btn-rule-settings').addEventListener('click', () => {
+        function openRuleSettings() {
             applyStateToUI();
             ui.ruleSettingsModal.classList.remove('hidden');
+        }
+
+        ui.ruleSummary.addEventListener('click', openRuleSettings);
+        ui.ruleSummary.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openRuleSettings();
+            }
         });
 
         document.getElementById('btn-close-rule-settings').addEventListener('click', () => {
@@ -1155,7 +1278,7 @@
                 div.innerHTML = `
                     <div class="flex-1">
                         <label class="text-xs text-slate-400 block mb-1">名前</label>
-                        <input type="text" class="player-name-input w-full bg-slate-800 border border-slate-500 rounded px-2 py-1 text-white outline-none focus:border-cyan-400" value="${player.name}" data-index="${index}">
+                        <input type="text" class="player-name-input w-full bg-slate-800 border border-slate-500 rounded px-2 py-1 text-white outline-none focus:border-cyan-400" data-index="${index}">
                     </div>
                     <div class="w-16 flex items-end justify-center pb-1">
                         <button class="btn-remove-player text-rose-400 hover:text-rose-300 p-1 bg-slate-800 rounded border border-rose-900/50 hover:bg-rose-900/30 transition" data-index="${index}">
@@ -1163,6 +1286,7 @@
                         </button>
                     </div>
                 `;
+                div.querySelector('.player-name-input').value = player.name;
                 ui.playerInputsContainer.appendChild(div);
             });
 
@@ -1208,6 +1332,9 @@
             }
             renderAnswerModeOptions();
             applyStateToUI();  // UIに反映
+            updateDisplay();
+            updateButtonLabels();
+            renderReaderPicker();
             
             try {
                 await initDB();       // データベース起動
@@ -1216,9 +1343,6 @@
                 console.warn('IndexedDB initialized failed:', e);
             }
             
-            updateDisplay();
-            updateButtonLabels();
-            renderReaderPicker();
         }
 
         // 初期化実行
