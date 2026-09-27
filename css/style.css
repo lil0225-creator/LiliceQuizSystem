@@ -16,6 +16,13 @@
             user-select: none;
             overflow: hidden;
         }
+
+        body.h-screen.w-screen {
+            width: 125vw;
+            height: 125vh;
+            transform: scale(0.8);
+            transform-origin: top left;
+        }
         .font-Lilice {
             font-family: var(--font-display);
         }
@@ -36,6 +43,8 @@
         }
 
         .player-name-key-target {
+            position: relative;
+            isolation: isolate;
             border: 0;
             color: inherit;
             background: transparent;
@@ -49,17 +58,33 @@
             outline-offset: -2px;
         }
 
-        .player-assigned-key {
-            flex: none;
-            border: 1px solid rgba(148, 163, 184, 0.5);
-            border-radius: 4px;
-            background: rgba(15, 23, 42, 0.55);
-            padding: 3px 7px;
-            color: #cbd5e1;
+        .player-key-capture-state {
+            position: absolute;
+            z-index: -1;
+            top: 50%;
+            left: 82%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            color: rgba(226, 232, 240, 0.16);
             font-family: var(--font-display);
-            font-size: 12px;
+            font-size: 0.75rem;
             font-weight: 700;
-            line-height: 1.2;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .player-assigned-key {
+            position: absolute;
+            z-index: -1;
+            top: 50%;
+            left: 82%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            color: rgba(226, 232, 240, 0.16);
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 900;
+            line-height: 1;
             white-space: nowrap;
         }
 
@@ -73,6 +98,10 @@
             font-family: var(--font-ui);
             overflow-wrap: anywhere;
             word-break: normal;
+        }
+
+        .player-name-watermark-row .player-name-text {
+            padding-right: 2.25rem;
         }
 
         .reader-name-button {
@@ -114,6 +143,68 @@
             background: var(--color-panel);
             border: 1px solid var(--color-panel-border);
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) inset;
+        }
+
+        .player-resting-lock {
+            isolation: isolate;
+            overflow: hidden;
+        }
+
+        .player-resting-lock::before,
+        .player-resting-lock::after {
+            position: absolute;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .player-resting-lock::before {
+            content: '';
+            inset: 0;
+            background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(148, 163, 184, 0.12) 14px 17px);
+        }
+
+        .player-resting-lock::after {
+            content: 'LOCK';
+            top: 50%;
+            left: 52%;
+            transform: translate(-50%, -50%) rotate(-12deg);
+            color: rgba(203, 213, 225, 0.12);
+            font-family: var(--font-display);
+            font-size: 1.25rem;
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .player-resting-lock > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .player-rest-count {
+            flex: none;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            border-radius: 3px;
+            background: rgba(15, 23, 42, 0.76);
+            padding: 2px 5px;
+            color: #cbd5e1;
+            font-family: var(--font-ui);
+            font-size: 0.625rem;
+            font-weight: 700;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .duel-response-label {
+            display: block;
+            flex: 0 0 100%;
+            margin-top: 0.15em;
+            color: #67e8f9;
+            font-family: var(--font-display);
+            font-size: 0.2em;
+            font-weight: 700;
+            line-height: 1;
+            text-align: center;
         }
 
         .backdrop-blur-sm,
@@ -172,6 +263,98 @@
             50% { box-shadow: 0 0 40px rgba(244,63,94,0.8) inset, 0 0 40px rgba(244,63,94,0.8); border-color: rgba(244,63,94,1); }
         }
         .effect-danger { animation: pulse-danger 1s infinite; }
+
+        @media (max-width: 960px) {
+            #current-answerer.player-name-content {
+                font-size: 2.5rem;
+            }
+
+            #btn-correct,
+            #btn-incorrect,
+            #btn-reset {
+                width: 5rem;
+                height: 5rem;
+                border-width: 3px;
+            }
+
+            #btn-skip {
+                width: 4rem;
+                height: 4rem;
+            }
+
+            body > div.flex.flex-1 > div.flex-1 > div.h-40 {
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            body > div.flex.flex-1 > div.flex-1 > div.h-40 > div.w-px {
+                margin-left: 0.25rem;
+                margin-right: 0.25rem;
+            }
+
+            #btn-correct > span:first-child,
+            #btn-incorrect > span:first-child {
+                font-size: 2rem;
+            }
+
+            #btn-reset > span:first-child {
+                font-size: 1.5rem;
+            }
+
+            #btn-correct > span:last-child,
+            #btn-incorrect > span:last-child,
+            #label-reset-key,
+            #label-skip-key {
+                font-size: 0.625rem;
+                line-height: 1.15;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 820px) {
+            #current-answerer.player-name-content {
+                font-size: 2rem;
+            }
+
+            #btn-correct,
+            #btn-incorrect,
+            #btn-reset {
+                width: 4rem;
+                height: 4rem;
+                border-width: 2px;
+            }
+
+            #btn-skip {
+                width: 3.5rem;
+                height: 3.5rem;
+            }
+
+            body > div.flex.flex-1 > div.flex-1 > div.h-40 {
+                gap: 0.25rem;
+                padding: 0.25rem;
+            }
+
+            body > div.flex.flex-1 > div.flex-1 > div.h-40 > div.w-px {
+                margin-left: 0.125rem;
+                margin-right: 0.125rem;
+            }
+
+            #btn-correct > span:first-child,
+            #btn-incorrect > span:first-child {
+                font-size: 1.5rem;
+            }
+
+            #btn-reset > span:first-child {
+                font-size: 1.125rem;
+            }
+
+            #btn-correct > span:last-child,
+            #btn-incorrect > span:last-child,
+            #label-reset-key,
+            #label-skip-key {
+                font-size: 0.5rem;
+            }
+        }
 
         body.lightweight-mode *,
         body.lightweight-mode *::before,

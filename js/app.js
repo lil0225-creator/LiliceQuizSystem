@@ -1,3 +1,5 @@
+import { LiliceQuizRules } from './rules.js';
+
 // --- 状態管理 (State) ---
         let players = [
             { id: 'p1', key: '1', name: 'プレイヤー1', correct: 0, incorrect: 0, status: 'active' }, // status: active, win, lose
@@ -8,8 +10,11 @@
         let readerId = 'p1';
         let waitingForPlayerKeyId = '';
         let matchHistory = [];
+        let duelPlayerIds = ['p2', 'p3'];
+        let duelOpponentChanceFor = '';
 
         function ensurePlayerKeys() {
+            const originalPlayers = JSON.stringify(players);
             const reservedPlayerKeys = new Set(players
                 .map(player => typeof player.key === 'string' ? player.key.toLowerCase() : '')
                 .filter(Boolean));
@@ -30,17 +35,36 @@
                 player.key = key;
                 usedKeys.add(key);
 
+                player.correct = Number.isFinite(player.correct) ? Math.max(0, Math.floor(player.correct)) : 0;
+                player.incorrect = Number.isFinite(player.incorrect) ? Math.max(0, Math.floor(player.incorrect)) : 0;
+                player.answerOCount = Number.isFinite(player.answerOCount)
+                    ? Math.max(0, Math.floor(player.answerOCount))
+                    : player.correct;
+                player.answerXCount = Number.isFinite(player.answerXCount)
+                    ? Math.max(0, Math.floor(player.answerXCount))
+                    : player.incorrect;
+                if (!['active', 'win', 'lose'].includes(player.status)) player.status = 'active';
                 player.restingForQuestion = Boolean(player.restingForQuestion);
                 player.restNextQuestion = Boolean(player.restNextQuestion);
                 player.restQuestionsRemaining = Number.isFinite(player.restQuestionsRemaining)
-                    ? Math.max(0, player.restQuestionsRemaining)
+                    ? Math.max(0, Math.floor(player.restQuestionsRemaining))
                     : (player.restingForQuestion ? 1 : 0);
                 player.restQuestionsPending = Number.isFinite(player.restQuestionsPending)
-                    ? Math.max(0, player.restQuestionsPending)
+                    ? Math.max(0, Math.floor(player.restQuestionsPending))
                     : (player.restNextQuestion ? 1 : 0);
+                player.swedishPenaltyMarks = Number.isFinite(player.swedishPenaltyMarks)
+                    ? Math.max(0, Math.floor(player.swedishPenaltyMarks))
+                    : 0;
+                player.upDownScore = Number.isFinite(player.upDownScore)
+                    ? Math.max(0, Math.floor(player.upDownScore))
+                    : player.correct;
+                player.duelPoints = Number.isFinite(player.duelPoints) ? Math.max(0, Math.floor(player.duelPoints)) : 0;
+                if (scoreRule !== 'suitei-duel') player.duelPoints = 0;
+                delete player.duelSetsWon;
                 delete player.restingForQuestion;
                 delete player.restNextQuestion;
             });
+            return JSON.stringify(players) !== originalPlayers;
         }
 
         let systemKeys = {
@@ -52,7 +76,8 @@
 
         let mode = LiliceQuizRules.answerModes[0].id;
         let scoreRule = LiliceQuizRules.scoreRules[1].id;
-        const missLimitRule = LiliceQuizRules.getMissLimitRule(LiliceQuizRules.defaultMissLimitRule);
+        const missLimitRuleId = LiliceQuizRules.defaultMissLimitRule;
+        const missLimitRule = LiliceQuizRules.getMissLimitRule(missLimitRuleId);
         let lightweightMode = false;
         let winCondition = 3;
         let loseCondition = 2;
@@ -66,6 +91,7 @@
         }
 
         let queue = []; // 早押ししたプレイヤーのid配列
+        let buzzOrder = []; // 問題中に押した順のプレイヤーid配列
         let isAcceptingInputs = true; // 誰も押していない状態か
         let currentAnsweringIndex = -1; // queueの中で現在解答権を持っている人のインデックス
 
@@ -168,6 +194,7 @@
         function saveAppState() {
             const state = {
                 players, readerId, systemKeys, mode, scoreRule, lightweightMode, winCondition, loseCondition, restQuestions, nyDisqualification, soundVolumes,
+                duelPlayerIds, duelOpponentChanceFor,
                 soundVolumeDefaultsVersion: SOUND_VOLUME_DEFAULTS_VERSION,
                 matchHistory
             };
@@ -182,14 +209,25 @@
                     const state = JSON.parse(saved);
                     if (state.players) players = state.players;
                     if (Object.prototype.hasOwnProperty.call(state, 'readerId')) readerId = state.readerId;
+                    if (Array.isArray(state.duelPlayerIds)) duelPlayerIds = state.duelPlayerIds.slice(0, 2);
+                    if (typeof state.duelOpponentChanceFor === 'string') duelOpponentChanceFor = state.duelOpponentChanceFor;
                     if (state.systemKeys) systemKeys = { ...systemKeys, ...state.systemKeys };
                     if (LiliceQuizRules.answerModes.some(rule => rule.id === state.mode)) mode = state.mode;
                     scoreRule = LiliceQuizRules.normalizeScoreRule(state.scoreRule);
                     if (typeof state.lightweightMode === 'boolean') lightweightMode = state.lightweightMode;
-                    winCondition = clampInteger(state.winCondition, 1, 99, winCondition);
+                    winCondition = clampInteger(state.winCondition, 1, 999, winCondition);
                     loseCondition = clampInteger(state.loseCondition, 0, 99, loseCondition);
                     restQuestions = clampInteger(state.restQuestions, 0, 99, restQuestions);
                     nyDisqualification = clampInteger(state.nyDisqualification, 0, 99, nyDisqualification);
+                    if (scoreRule === 'suitei-duel') {
+                        const duelTarget = LiliceQuizRules.getDuelTarget();
+                        if (mode !== 'duel' || winCondition !== duelTarget) soundVolumesMigrated = true;
+                        mode = 'duel';
+                        winCondition = duelTarget;
+                    } else if (mode === 'duel') {
+                        mode = 'endless';
+                        soundVolumesMigrated = true;
+                    }
                     if (state.soundVolumes) {
                         soundVolumes = { ...soundVolumes, ...state.soundVolumes };
                         if (state.soundVolumeDefaultsVersion !== SOUND_VOLUME_DEFAULTS_VERSION) {
@@ -204,8 +242,8 @@
                     console.error('Failed to load state', e);
                 }
             }
-            ensurePlayerKeys();
-            if (soundVolumesMigrated) saveAppState();
+            const playersNormalized = ensurePlayerKeys();
+            if (soundVolumesMigrated || playersNormalized) saveAppState();
         }
 
         function renderHistory() {
@@ -223,8 +261,8 @@
             matchHistory.forEach(match => match.players.forEach(record => {
                 const total = totals.get(record.id) || { name: record.name, correct: 0, incorrect: 0, wins: 0 };
                 total.name = record.name;
-                total.correct += record.correct;
-                total.incorrect += record.incorrect;
+                total.correct += Number.isFinite(record.answerOCount) ? record.answerOCount : (record.correct || 0);
+                total.incorrect += Number.isFinite(record.answerXCount) ? record.answerXCount : (record.incorrect || 0);
                 total.wins += Number.isFinite(record.wins) ? record.wins : 0;
                 totals.set(record.id, total);
             }));
@@ -253,7 +291,17 @@
                 correct.textContent = `〇${record.correct}`;
                 const incorrect = document.createElement('span');
                 incorrect.className = 'text-rose-400 ml-4';
-                incorrect.textContent = `✖${record.incorrect}`;
+                incorrect.textContent = record.scoreRule === 'swedish10' && Number.isFinite(record.swedishPenaltyMarks)
+                    ? `×${record.swedishPenaltyMarks}`
+                    : `✖${record.incorrect}`;
+                if (record.scoreRule === 'suitei-duel') {
+                    correct.textContent = `${record.duelPoints || 0}点`;
+                    incorrect.textContent = '';
+                } else if (record.scoreRule === 'ten-by-ten') {
+                    correct.textContent = `${record.correct}×${Math.max(0, 10 - record.incorrect)}`;
+                } else if (record.scoreRule === 'up-down' && Number.isFinite(record.score)) {
+                    correct.textContent = `${record.score}点`;
+                }
                 const wins = document.createElement('span');
                 wins.className = 'font-sans text-xs text-amber-300';
                 wins.textContent = Number.isFinite(record.wins) ? `WIN ${record.wins}` : 'WIN —';
@@ -262,7 +310,7 @@
                 containerElement.appendChild(row);
             };
 
-            const totalsSection = createSection('累計（WIN数は今回以降）', 'text-amber-300');
+            const totalsSection = createSection('累計', 'text-amber-300');
             totals.forEach(record => appendRecord(totalsSection.rows, record));
             container.appendChild(totalsSection.section);
 
@@ -272,10 +320,19 @@
                 const matchSection = document.createElement('section');
                 const heading = document.createElement('h4');
                 heading.className = 'text-cyan-300 font-bold mb-2';
-                heading.textContent = `セット ${matchHistory.length - index} / ${match.date}`;
+                const scoreRuleLabel = LiliceQuizRules.scoreRules.find(rule => rule.id === match.scoreRule)?.label;
+                const answerModeLabel = LiliceQuizRules.getAnswerMode(match.mode).label;
+                const ruleSummary = match.scoreRule === 'suitei-duel'
+                    ? ' · 対決ルール'
+                    : (match.scoreRule ? ` · ${scoreRuleLabel} / ${answerModeLabel}` : '');
+                heading.textContent = `セット ${matchHistory.length - index} / ${match.date}${ruleSummary}`;
                 const rows = document.createElement('div');
                 rows.className = 'space-y-2';
-                match.players.forEach(record => appendRecord(rows, record));
+                match.players.forEach(record => appendRecord(rows, {
+                    ...record,
+                    scoreRule: match.scoreRule,
+                    swedishPenaltyMarks: record.swedishPenaltyMarks
+                }));
                 matchSection.append(heading, rows);
                 detailsSection.rows.appendChild(matchSection);
             });
@@ -287,26 +344,48 @@
             ui.loseScoreInput.value = loseCondition;
             ui.restQuestionsInput.value = restQuestions;
             ui.nyDisqualificationInput.value = nyDisqualification;
+            renderDuelPlayerOptions();
             document.getElementById('rule-summary-mode').textContent = LiliceQuizRules.getAnswerMode(mode).label;
             document.getElementById('rule-summary-win').textContent = winCondition;
             const isNYRule = scoreRule === 'ny';
             const isRestRule = scoreRule === 'marks-rest';
+            const isFreezeRule = scoreRule === 'freeze';
+            const isSwedishRule = scoreRule === 'swedish10';
+            const isDuelRule = scoreRule === 'suitei-duel';
+            const isPointRule = isNYRule || scoreRule === 'up-down';
+            const isTenByTenRule = scoreRule === 'ten-by-ten';
             const scoreRuleLabel = LiliceQuizRules.scoreRules.find(rule => rule.id === scoreRule)?.label || 'N〇N✕';
             document.getElementById('rule-summary-scoring-rule').textContent = scoreRuleLabel;
-            document.getElementById('win-condition-unit').textContent = isNYRule ? '点' : 'マル';
-            document.getElementById('rule-summary-win-unit').textContent = isNYRule ? '点' : 'マル';
-            document.getElementById('rule-summary-lose-label').textContent = isNYRule ? '失格' : (isRestRule ? '休み' : '失格');
-            document.getElementById('rule-summary-lose').textContent = isNYRule
-                ? (nyDisqualification > 0 ? `-${nyDisqualification}` : 'なし')
-                : (isRestRule ? (restQuestions > 0 ? restQuestions : 'なし') : (loseCondition > 0 ? loseCondition : 'なし'));
+            const winUnit = isPointRule || isDuelRule ? '点' : (isTenByTenRule ? '積' : 'マル');
+            document.getElementById('win-condition-unit').textContent = winUnit;
+            document.getElementById('rule-summary-win-unit').textContent = winUnit;
+            document.getElementById('rule-summary-lose-label').textContent = isDuelRule
+                ? '誤答時'
+                : isNYRule
+                ? '失格'
+                : (isRestRule ? '休み' : (isFreezeRule ? '誤答ごと休み' : (isSwedishRule ? '失格（累計×）' : '失格')));
+            let loseSummary = loseCondition > 0 ? String(loseCondition) : 'なし';
+            if (isNYRule) loseSummary = nyDisqualification > 0 ? String(nyDisqualification) : 'なし';
+            else if (isDuelRule) loseSummary = '+1';
+            else if (isRestRule) loseSummary = restQuestions > 0 ? String(restQuestions) : 'なし';
+            else if (isFreezeRule) loseSummary = 'n';
+            document.getElementById('rule-summary-lose').textContent = loseSummary;
             document.getElementById('rule-summary-lose-unit').textContent = isNYRule
                 ? (nyDisqualification > 0 ? '点' : '')
-                : (isRestRule ? (restQuestions > 0 ? '休' : '') : (loseCondition > 0 ? 'バツ' : ''));
-            document.getElementById('lose-condition-field').classList.toggle('hidden', isNYRule || isRestRule);
+                : (isDuelRule ? '相手点' : (isRestRule || isFreezeRule ? '休' : (loseCondition > 0 ? (isSwedishRule ? '×' : 'バツ') : '')));
+            document.getElementById('lose-condition-field').classList.toggle('hidden', isNYRule || isRestRule || isFreezeRule || isDuelRule);
             document.getElementById('rest-questions-field').classList.toggle('hidden', !isRestRule);
             document.getElementById('ny-disqualification-field').classList.toggle('hidden', !isNYRule);
-            document.getElementById('lose-condition-title').textContent = '失格（誤答数）';
-            document.getElementById('lose-condition-unit').textContent = 'バツ（0で無効）';
+            ui.duelPlayerFields.classList.toggle('hidden', !isDuelRule);
+            ui.duelPlayerFields.classList.toggle('grid', isDuelRule);
+            document.getElementById('lose-condition-title').textContent = isSwedishRule ? '失格（累計×数）' : '失格（誤答数）';
+            document.getElementById('lose-condition-unit').textContent = isSwedishRule ? '×（0で無効）' : 'バツ（0で無効）';
+            const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
+                mode, scoreRule, winCondition, loseCondition, restQuestions, nyDisqualification
+            });
+            ui.rulePresetSelect.value = matchingPreset;
+            ui.rulePresetDescription.textContent = LiliceQuizRules.getRulePreset(matchingPreset)?.description
+                || '現在の設定を個別に組み合わせています。';
             ui.lightweightModeInput.checked = lightweightMode;
             document.body.classList.toggle('lightweight-mode', lightweightMode);
             const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
@@ -327,7 +406,7 @@
 
         function renderAnswerModeOptions() {
             const inactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
-            const buttons = LiliceQuizRules.answerModes.map(rule => {
+            const buttons = LiliceQuizRules.answerModes.filter(rule => rule.id !== 'duel').map(rule => {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.answerMode = rule.id;
@@ -339,7 +418,7 @@
         }
 
         function renderScoreRuleOptions() {
-            const buttons = LiliceQuizRules.scoreRules.map(rule => {
+            const buttons = LiliceQuizRules.scoreRules.filter(rule => rule.id !== 'suitei-duel').map(rule => {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.scoreRule = rule.id;
@@ -348,6 +427,28 @@
                 return button;
             });
             ui.scoreRuleOptions.replaceChildren(...buttons);
+        }
+
+        function renderRulePresetOptions() {
+            const options = [new Option('カスタム設定', 'custom')];
+            LiliceQuizRules.rulePresets.forEach(preset => options.push(new Option(preset.label, preset.id)));
+            ui.rulePresetSelect.replaceChildren(...options);
+        }
+
+        function renderDuelPlayerOptions() {
+            if (!ui.duelPlayerA || !ui.duelPlayerB) return;
+            let candidates = players.filter(player => player.id !== readerId);
+            if (candidates.length < 2) candidates = players;
+            if (!candidates.some(player => player.id === duelPlayerIds[0])
+                || !candidates.some(player => player.id === duelPlayerIds[1])
+                || duelPlayerIds[0] === duelPlayerIds[1]) {
+                duelPlayerIds = candidates.slice(0, 2).map(player => player.id);
+            }
+            const makeOptions = () => candidates.map(player => new Option(player.name, player.id));
+            ui.duelPlayerA.replaceChildren(...makeOptions());
+            ui.duelPlayerB.replaceChildren(...makeOptions());
+            ui.duelPlayerA.value = duelPlayerIds[0] || '';
+            ui.duelPlayerB.value = duelPlayerIds[1] || '';
         }
 
         // --- Web Audio API (フォールバック・デフォルト音用) ---
@@ -521,6 +622,7 @@
             stateHistory.push({
                 players: JSON.parse(JSON.stringify(players)),
                 queue: [...queue],
+                buzzOrder: [...buzzOrder],
                 isAcceptingInputs: isAcceptingInputs,
                 currentAnsweringIndex: currentAnsweringIndex,
                 matchHistory: JSON.parse(JSON.stringify(matchHistory)),
@@ -530,9 +632,13 @@
                 winCondition: winCondition,
                 loseCondition: loseCondition,
                 restQuestions: restQuestions,
-                nyDisqualification: nyDisqualification
+                nyDisqualification: nyDisqualification,
+                duelPlayerIds: [...duelPlayerIds],
+                duelOpponentChanceFor
             });
-            if (stateHistory.length > 30) stateHistory.shift(); // 最大30件保存
+            if (stateHistory.length > 30) {
+                stateHistory.shift(); // 最大30件保存
+            }
             updateUndoButton();
             saveAppState(); // 全体状態も保存
         }
@@ -542,6 +648,7 @@
             const prevState = stateHistory.pop();
             players = prevState.players;
             queue = prevState.queue;
+            buzzOrder = prevState.buzzOrder || [...queue];
             isAcceptingInputs = prevState.isAcceptingInputs;
             currentAnsweringIndex = prevState.currentAnsweringIndex;
             matchHistory = prevState.matchHistory || [];
@@ -552,6 +659,8 @@
             loseCondition = prevState.loseCondition;
             restQuestions = prevState.restQuestions ?? 1;
             nyDisqualification = prevState.nyDisqualification ?? 0;
+            duelPlayerIds = prevState.duelPlayerIds || duelPlayerIds;
+            duelOpponentChanceFor = prevState.duelOpponentChanceFor || '';
             
             updateDisplay();
             updateUndoButton();
@@ -578,16 +687,57 @@
             return key;
         }
 
+        function getPlayerKeyWatermark(key) {
+            const displayKey = getDisplayKey(key).toUpperCase();
+            const abbreviations = {
+                SPACE: 'SPC',
+                ENTER: 'ENT',
+                BACKSPACE: 'BKSP',
+                DELETE: 'DEL',
+                INSERT: 'INS',
+                ARROWUP: '↑',
+                ARROWDOWN: '↓',
+                ARROWLEFT: '←',
+                ARROWRIGHT: '→',
+                PAGEUP: 'PGUP',
+                PAGEDOWN: 'PGDN',
+                CONTROL: 'CTRL'
+            };
+            return abbreviations[displayKey] || displayKey;
+        }
+
         function getPlayerScore(player) {
-            return LiliceQuizRules.getPlayerScore(player, scoreRule);
+            return LiliceQuizRules.getPlayerScore(player, scoreRule, { tenByTenBase: 10 });
+        }
+
+        function resolveDuelTarget(player) {
+            if (!player || player.duelPoints < winCondition) return false;
+            player.status = 'win';
+            return true;
+        }
+
+        function getScoringPlayers() {
+            return scoreRule === 'suitei-duel'
+                ? players.filter(player => duelPlayerIds.includes(player.id))
+                : players.filter(player => player.id !== readerId);
+        }
+
+        function isDuelPlayer(playerId) {
+            return scoreRule === 'suitei-duel' && duelPlayerIds.includes(playerId);
         }
 
         function updatePlayerStatus(player) {
+            if (scoreRule === 'suitei-duel') {
+                player.status = player.duelPoints >= winCondition ? 'win' : 'active';
+                return;
+            }
             if (getPlayerScore(player) >= winCondition) {
                 player.status = 'win';
-            } else if (scoreRule === 'ny' && nyDisqualification > 0 && getPlayerScore(player) <= -nyDisqualification) {
-                player.status = 'lose';
-            } else if (scoreRule === 'marks-eliminate' && loseCondition > 0 && missLimitRule === LiliceQuizRules.missLimitRules.eliminate && player.incorrect >= loseCondition) {
+            } else if (LiliceQuizRules.isPlayerDisqualified(player, scoreRule, {
+                loseCondition,
+                nyDisqualification,
+                missLimitRuleId
+            })) {
                 player.status = 'lose';
             } else {
                 player.status = 'active';
@@ -595,7 +745,7 @@
         }
 
         function findEligiblePlayerByKey(key) {
-            return players.find(player => player.key === key && player.id !== readerId && player.status === 'active' && player.restQuestionsRemaining === 0);
+            return getScoringPlayers().find(player => player.key === key && player.status === 'active' && player.restQuestionsRemaining === 0);
         }
 
         const playerNameSegmenter = typeof Intl.Segmenter === 'function'
@@ -660,6 +810,11 @@
             playerList: document.getElementById('player-list'),
             answerModeOptions: document.getElementById('answer-mode-options'),
             scoreRuleOptions: document.getElementById('score-rule-options'),
+            rulePresetSelect: document.getElementById('rule-preset'),
+            rulePresetDescription: document.getElementById('rule-preset-description'),
+            duelPlayerFields: document.getElementById('duel-player-fields'),
+            duelPlayerA: document.getElementById('duel-player-a'),
+            duelPlayerB: document.getElementById('duel-player-b'),
             winScoreInput: document.getElementById('win-condition'),
             loseScoreInput: document.getElementById('lose-condition'),
             restQuestionsInput: document.getElementById('rest-questions'),
@@ -699,7 +854,11 @@
             const value = parseInt(scoreButton.dataset.val);
             if (scoreButton.dataset.type === 'points') {
                 const currentScore = getPlayerScore(player);
-                if (value > 0) {
+                if (scoreRule === 'suitei-duel') {
+                    player.duelPoints = Math.max(0, currentScore + value);
+                } else if (scoreRule === 'up-down') {
+                    player.upDownScore = Math.max(0, currentScore + value);
+                } else if (value > 0) {
                     if (currentScore < 0) player.incorrect--;
                     else player.correct++;
                 } else if (currentScore > 0) {
@@ -711,6 +870,8 @@
                 player.correct = Math.max(0, player.correct + value);
             } else if (scoreButton.dataset.type === 'incorrect') {
                 player.incorrect = Math.max(0, player.incorrect + value);
+            } else if (scoreButton.dataset.type === 'penalty-marks') {
+                player.swedishPenaltyMarks = Math.max(0, player.swedishPenaltyMarks + value);
             }
             updatePlayerStatus(player);
 
@@ -819,20 +980,25 @@
             
             // --- 早押し処理 ---
             if (isAcceptingInputs) {
-                const player = findEligiblePlayerByKey(e.key.toLowerCase());
+                let player = findEligiblePlayerByKey(e.key.toLowerCase());
+                if (scoreRule === 'suitei-duel' && duelOpponentChanceFor
+                    && player?.id !== duelOpponentChanceFor) player = null;
 
                 if (player && !queue.includes(player.id)) {
                     e.preventDefault();
                     pushBuzzer(player.id);
                 }
             } else if (currentAnsweringIndex >= 0) {
-                // 解答中も押せばキューに入る (2着以降)
+                if (scoreRule === 'suitei-duel') return;
+                // 解答中の押下順を記録し、解答キューはモードの上限内に保つ
                 const player = findEligiblePlayerByKey(e.key.toLowerCase());
                 const modeRule = LiliceQuizRules.getAnswerMode(mode);
                 const queueHasRoom = modeRule.queueLimit === null || queue.length < modeRule.queueLimit;
-                if (player && !queue.includes(player.id) && queueHasRoom) {
+                if (player && !buzzOrder.includes(player.id)) {
                     e.preventDefault();
-                    queue.push(player.id);
+                    saveState();
+                    buzzOrder.push(player.id);
+                    if (queueHasRoom) queue.push(player.id);
                     updateDisplay();
                 }
             }
@@ -857,7 +1023,30 @@
             const p = players.find(x => x.id === pid);
             if (!p) return;
 
-            p.correct++;
+            if (scoreRule === 'suitei-duel') {
+                const isOpponentResponse = duelOpponentChanceFor === pid;
+                p.answerOCount++;
+                LiliceQuizRules.applyDuelCorrect(p, isOpponentResponse);
+                duelOpponentChanceFor = '';
+                playSound('correct');
+                resolveDuelTarget(p);
+
+                if (p.status === 'win') {
+                    setTimeout(() => {
+                        const currentPlayer = players.find(player => player.id === pid);
+                        if (currentPlayer?.status !== 'win') return;
+                        playSound('win');
+                        showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-400');
+                    }, 500);
+                }
+                resetBuzzer(false);
+                updateDisplay();
+                saveAppState();
+                return;
+            }
+
+            p.answerOCount++;
+            LiliceQuizRules.applyCorrect(p, scoreRule);
             playSound('correct');
             updatePlayerStatus(p);
             
@@ -893,7 +1082,39 @@
             const p = players.find(x => x.id === pid);
             if (!p) return;
 
-            p.incorrect++;
+            if (scoreRule === 'suitei-duel') {
+                const isOpponentResponse = duelOpponentChanceFor === pid;
+                const opponentId = duelPlayerIds.find(playerId => playerId !== pid);
+                const opponent = players.find(player => player.id === opponentId);
+                if (!opponent) return;
+
+                p.answerXCount++;
+                LiliceQuizRules.applyDuelIncorrect(p, opponent, isOpponentResponse);
+                playSound('incorrect');
+                const opponentWon = !isOpponentResponse && resolveDuelTarget(opponent);
+                if (opponentWon) {
+                    duelOpponentChanceFor = '';
+                    if (opponent.status === 'win') {
+                        playSound('win');
+                        setTimeout(() => showResultOverlay(opponent.name, 'WINNER!', 'text-amber-400'), 300);
+                    }
+                    resetBuzzer(false);
+                } else if (isOpponentResponse) {
+                    duelOpponentChanceFor = '';
+                    resetBuzzer(false);
+                } else {
+                    duelOpponentChanceFor = opponent.id;
+                    queue = [];
+                    currentAnsweringIndex = -1;
+                    isAcceptingInputs = true;
+                }
+                updateDisplay();
+                saveAppState();
+                return;
+            }
+
+            p.answerXCount++;
+            LiliceQuizRules.applyIncorrect(p, scoreRule, { restQuestions });
             playSound('incorrect');
 
             updatePlayerStatus(p);
@@ -904,9 +1125,7 @@
                     playSound('lose');
                     showResultOverlay(currentPlayer.name, 'DISQUALIFIED', 'text-rose-500');
                 }, 500);
-            } else if (scoreRule === 'marks-rest' && restQuestions > 0) {
-                p.restQuestionsPending = restQuestions;
-            } else if (scoreRule === 'marks-eliminate' && loseCondition > 0 && p.incorrect === loseCondition - 1 && loseCondition > 1) {
+            } else if (scoreRule === 'marks-eliminate' && loseCondition > 1 && p.incorrect === loseCondition - 1) {
                 showCutin('DANGER!', 'danger');
             }
 
@@ -919,7 +1138,7 @@
                 if (currentAnsweringIndex < queue.length) {
                     setTimeout(() => playSound('buzzer'), 300); // 次の人が鳴る
                 } else if (transition === 'advance-or-wait') {
-                    isAcceptingInputs = false;
+                    isAcceptingInputs = true;
                     currentAnsweringIndex = -1;
                 } else {
                     resetBuzzer(false);
@@ -938,6 +1157,13 @@
         });
 
         ui.btnSkip.addEventListener('click', () => {
+            if (scoreRule === 'suitei-duel' && duelOpponentChanceFor && isAcceptingInputs && queue.length === 0) {
+                saveState();
+                duelOpponentChanceFor = '';
+                resetBuzzer(false);
+                saveAppState();
+                return;
+            }
             saveState();
             resetBuzzer(false);
             saveAppState();
@@ -983,15 +1209,29 @@
             
             showMessage('すべてのスコアをゼロに戻して、新しい試合を始めますか？', () => {
                 saveState(); // 状態保存
-                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0);
+                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0 || player.duelPoints > 0);
                 if (hasScore) {
                     matchHistory.push({
                         date: new Date().toLocaleString('ja-JP'),
+                        scoreRule,
+                        mode,
+                        winCondition,
+                        loseCondition,
+                        restQuestions,
+                        nyDisqualification,
+                        tenByTenBase: 10,
+                        duelPlayerIds: [...duelPlayerIds],
                         players: players.map(player => ({
                             id: player.id,
                             name: player.name,
                             correct: player.correct,
                             incorrect: player.incorrect,
+                            answerOCount: player.answerOCount,
+                            answerXCount: player.answerXCount,
+                            swedishPenaltyMarks: player.swedishPenaltyMarks || 0,
+                            score: player.upDownScore,
+                            scoreRule,
+                            duelPoints: player.duelPoints || 0,
                             wins: player.status === 'win' ? 1 : 0
                         }))
                     });
@@ -999,6 +1239,11 @@
                 players.forEach(p => {
                     p.correct = 0;
                     p.incorrect = 0;
+                    p.answerOCount = 0;
+                    p.answerXCount = 0;
+                    p.swedishPenaltyMarks = 0;
+                    p.upDownScore = 0;
+                    p.duelPoints = 0;
                     p.status = 'active';
                     p.restQuestionsRemaining = 0;
                     p.restQuestionsPending = 0;
@@ -1012,8 +1257,9 @@
         function pushBuzzer(playerId) {
             saveState(); // 誰かが押した瞬間の状態を保存(直前に戻せるように)
             queue.push(playerId);
+            if (!buzzOrder.includes(playerId)) buzzOrder.push(playerId);
             isAcceptingInputs = false;
-            currentAnsweringIndex = 0;
+            currentAnsweringIndex = queue.length - 1;
             playSound('buzzer');
             updateDisplay();
         }
@@ -1022,6 +1268,8 @@
             if (shouldSaveState && queue.length > 0) saveState();
             if (completesQuestion) completeQuestion();
             queue = [];
+            buzzOrder = [];
+            duelOpponentChanceFor = '';
             currentAnsweringIndex = -1;
             isAcceptingInputs = true;
             updateDisplay();
@@ -1055,6 +1303,7 @@
             resetBuzzer(false, false);
             saveAppState();
             renderReaderPicker();
+            renderDuelPlayerOptions();
         }
 
         function renderReaderPicker() {
@@ -1123,20 +1372,29 @@
         function updateDisplay() {
             // メインエリア
             if (isAcceptingInputs) {
-                ui.statusDisplay.textContent = 'WAITING...';
+                const waitingForDuelOpponent = scoreRule === 'suitei-duel'
+                    && Boolean(duelOpponentChanceFor)
+                    && queue.length === 0;
+                ui.statusDisplay.textContent = waitingForDuelOpponent ? 'QUESTION CONTINUES...' : 'WAITING...';
                 ui.statusDisplay.classList.remove('hidden');
                 ui.currentAnswerer.classList.add('hidden');
                 ui.currentAnswerer.classList.remove('animate-flash');
-                
-                // 待機中もボタンはアクティブ(音出し用)
-                ui.btnCorrect.classList.remove('opacity-50', 'cursor-not-allowed');
-                ui.btnIncorrect.classList.remove('opacity-50', 'cursor-not-allowed');
+                ui.btnCorrect.classList.toggle('opacity-50', waitingForDuelOpponent);
+                ui.btnCorrect.classList.toggle('cursor-not-allowed', waitingForDuelOpponent);
+                ui.btnIncorrect.classList.toggle('opacity-50', waitingForDuelOpponent);
+                ui.btnIncorrect.classList.toggle('cursor-not-allowed', waitingForDuelOpponent);
             } else if (currentAnsweringIndex >= 0 && currentAnsweringIndex < queue.length) {
                 const pid = queue[currentAnsweringIndex];
                 const p = players.find(x => x.id === pid);
                 if (p) {
                     ui.statusDisplay.classList.add('hidden');
                     renderPlayerName(ui.currentAnswerer, p.name);
+                    if (scoreRule === 'suitei-duel' && duelOpponentChanceFor === pid) {
+                        const responseLabel = document.createElement('span');
+                        responseLabel.className = 'duel-response-label';
+                        responseLabel.textContent = 'OPPONENT RESPONSE';
+                        ui.currentAnswerer.appendChild(responseLabel);
+                    }
                     ui.currentAnswerer.classList.remove('hidden');
                     ui.currentAnswerer.classList.add('animate-flash');
                     
@@ -1155,9 +1413,19 @@
                 ui.btnIncorrect.classList.remove('opacity-50', 'cursor-not-allowed');
             }
 
+            const waitingForDuelOpponent = scoreRule === 'suitei-duel' && duelOpponentChanceFor && isAcceptingInputs && queue.length === 0;
+            ui.btnSkip.querySelector('span').textContent = 'PASS';
+            const skipKeyLabel = document.getElementById('label-skip-key');
+            skipKeyLabel.textContent = waitingForDuelOpponent
+                ? '無回答で終了'
+                : `スルー (${getDisplayKey(systemKeys.skip).toUpperCase()})`;
+            ui.btnSkip.title = waitingForDuelOpponent
+                ? '相手が問題文を読み切っても押さない場合に終了'
+                : 'この問題をスルー';
+
             // 人数に応じて文字サイズを動的に決定 (プロポーショナル化)
             // ▼▼全体的にサイズを一段階小さくしました▼▼
-            const scoringPlayers = players.filter(player => player.id !== readerId);
+            const scoringPlayers = getScoringPlayers();
             const compactPlayerList = scoringPlayers.length >= 5;
             const compactEditList = compactPlayerList && isScoreEditMode;
             const densePlayerList = scoringPlayers.length >= 11;
@@ -1203,41 +1471,53 @@
                     statusIcon = '💀 ';
                 } else if (p.restQuestionsRemaining > 0) {
                     statusClass = 'bg-slate-700/80 text-slate-400';
-                    statusIcon = '休 ';
+                    statusIcon = '';
                 } else if (isReach) {
                     statusClass = 'bg-emerald-950/80 text-white effect-reach'; // リーチ点滅
                 } else if (isDanger) {
                     statusClass = 'bg-rose-950/80 text-white effect-danger'; // 飛びリーチ点滅
                 }
 
-                // 着順バッジ生成 (キューに入っている場合表示)
+                // 押下順バッジ生成
                 let orderBadge = '';
-                const qIndex = queue.indexOf(p.id);
-                if (qIndex !== -1 && qIndex >= currentAnsweringIndex) {
-                    const isFirst = qIndex === currentAnsweringIndex;
-                    const orderStr = isFirst ? '1st' : `${qIndex - currentAnsweringIndex + 1}nd`;
+                const orderIndex = buzzOrder.indexOf(p.id);
+                if (orderIndex !== -1) {
+                    const isFirst = orderIndex === 0;
+                    const position = orderIndex + 1;
+                    const lastTwoDigits = position % 100;
+                    const suffix = lastTwoDigits >= 11 && lastTwoDigits <= 13
+                        ? 'th'
+                        : ({ 1: 'st', 2: 'nd', 3: 'rd' }[position % 10] || 'th');
+                    const orderStr = `${position}${suffix}`;
                     const badgeClass = isFirst ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_#06b6d4]' : 'bg-slate-600 text-white border border-slate-500';
                     const badgeSize = compactPlayerList ? 'ml-1 px-1.5 py-0.5 text-xs' : 'ml-3 px-3 py-1 text-lg';
                     orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
+                const restCountBadge = p.restQuestionsRemaining > 0
+                    ? `<span class="player-rest-count">あと${p.restQuestionsRemaining}問</span>`
+                    : '';
 
                 const playerRowSize = compactEditList
                     ? 'p-1.5 rounded-md min-h-[54px]'
                     : (compactPlayerList
                         ? (densePlayerList ? 'p-1.5 rounded-md min-h-[60px]' : 'p-2 rounded-md min-h-[80px]')
                         : 'p-2 rounded-lg min-h-[60px]');
-                div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass}`;
+                const isResting = p.restQuestionsRemaining > 0;
+                div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass} ${isResting ? 'player-resting-lock' : ''}`;
                 const isWaitingForPlayerKey = waitingForPlayerKeyId === p.id;
                 const assignedKeyLabel = getDisplayKey(p.key).toUpperCase();
+                const assignedKeyWatermark = getPlayerKeyWatermark(p.key);
                 const playerNameButton = (fontSize) => `
-                    <button type="button" class="player-name-key-target h-full w-full min-w-0 flex flex-col items-center justify-center rounded-md px-2 py-1 text-center transition-colors ${isWaitingForPlayerKey ? 'bg-cyan-950/40 ring-2 ring-cyan-300' : 'hover:bg-cyan-900/20'}" data-id="${p.id}" title="名前をクリックしてキーを割り当て">
-                        <span class="${fontSize} font-bold flex min-w-0 w-full items-center justify-start gap-1.5 text-left leading-tight">
+                    <button type="button" class="player-name-key-target h-full w-full min-w-0 flex flex-col items-center justify-center rounded-md px-2 py-1 text-center transition-colors ${isWaitingForPlayerKey ? 'bg-cyan-950/40 ring-2 ring-cyan-300' : 'hover:bg-cyan-900/20'}" data-id="${p.id}" title="${isWaitingForPlayerKey ? 'Escでキャンセル' : '名前をクリックしてキーを割り当て'}">
+                        <span class="player-name-watermark-row ${fontSize} font-bold flex min-w-0 w-full items-center justify-start gap-1.5 text-left leading-tight">
                             <span class="player-status-icon">${statusIcon.trim()}</span>
                             <span class="player-name-text player-name-left min-w-0"></span>
-                            <span class="player-assigned-key" data-assigned-key></span>
+                            ${restCountBadge}
+                            ${isWaitingForPlayerKey
+                                ? '<span class="player-key-capture-state">PRESS KEY</span>'
+                                : (isResting || orderIndex !== -1 ? '' : '<span class="player-assigned-key" data-assigned-key></span>')}
                             ${orderBadge}
                         </span>
-                        ${isWaitingForPlayerKey ? '<span class="mt-1 text-[10px] font-bold text-cyan-200">キー入力中</span>' : ''}
                     </button>
                 `;
                 
@@ -1245,11 +1525,21 @@
                     // 編集モードUI
                     const editNameSize = compactPlayerList ? 'text-base' : 'text-xl';
                     const editControlSize = compactPlayerList ? 'px-1' : 'px-2';
-                    const scoreEditControls = scoreRule === 'ny'
+                    const scorePresentation = LiliceQuizRules.getScorePresentation(p, scoreRule, { tenByTenBase: 10 });
+                    const scoreEditControls = scorePresentation.type === 'points'
                         ? `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
                             <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="-1">-</button>
-                            <span class="text-cyan-200 min-w-12 text-center font-bold">${getPlayerScore(p)}点</span>
+                            <span class="text-cyan-200 min-w-12 text-center font-bold">${getPlayerScore(p)}${scoreRule === 'suitei-duel' ? '点' : '点'}</span>
                             <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="1">+</button>
+                        </div>`
+                        : scorePresentation.type === 'penalty-marks'
+                        ? `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
+                            <span class="text-emerald-400 min-w-10 text-center font-bold">〇${scorePresentation.correct}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1" data-id="${p.id}" data-type="correct" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="penalty-marks" data-val="-1">-</button>
+                            <span class="text-rose-400 min-w-10 text-center font-bold">×${scorePresentation.penaltyMarks}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="penalty-marks" data-val="1">+</button>
                         </div>`
                         : `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
                             <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
@@ -1268,12 +1558,26 @@
                 } else {
                     // 通常表示UI (可変サイズ適用)
                     const scoreGap = compactPlayerList ? (densePlayerList ? 'gap-1' : 'gap-1.5') : 'gap-6';
-                    const scoreDisplay = scoreRule === 'ny'
-                        ? `<div class="flex font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${getPlayerScore(p)}点</span></div>`
-                        : `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${p.correct}</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${p.incorrect}</span>
+                    const scorePresentation = LiliceQuizRules.getScorePresentation(p, scoreRule, { tenByTenBase: 10 });
+                    let scoreDisplay;
+                    if (scoreRule === 'suitei-duel') {
+                        scoreDisplay = `<div class="flex flex-col items-end font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${p.duelPoints || 0}点</span></div>`;
+                    } else if (scorePresentation.type === 'points') {
+                        scoreDisplay = `<div class="flex font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${scorePresentation.value}点</span></div>`;
+                    } else if (scorePresentation.type === 'product') {
+                        const productSize = densePlayerList ? 'text-xl' : 'text-2xl';
+                        scoreDisplay = `<div class="flex font-Lilice ${productSize} font-bold tracking-wider shrink-0 text-cyan-200" aria-label="${scorePresentation.alpha}かける${scorePresentation.beta}、積${scorePresentation.value}"><span>${scorePresentation.alpha}×${scorePresentation.beta}=${scorePresentation.value}</span></div>`;
+                    } else if (scorePresentation.type === 'penalty-marks') {
+                        scoreDisplay = `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
+                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${scorePresentation.correct}</span>
+                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">×${scorePresentation.penaltyMarks}</span>
                         </div>`;
+                    } else {
+                        scoreDisplay = `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
+                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${scorePresentation.correct}</span>
+                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${scorePresentation.incorrect}</span>
+                        </div>`;
+                    }
                     div.innerHTML = `
                         <div class="self-stretch flex min-w-0 flex-1 mr-2">
                             ${playerNameButton(nameSize)}
@@ -1285,7 +1589,7 @@
                 if (playerNameElement) renderPlayerName(playerNameElement, p.name);
                 const assignedKeyElement = div.querySelector('[data-assigned-key]');
                 if (assignedKeyElement) {
-                    assignedKeyElement.textContent = assignedKeyLabel;
+                    assignedKeyElement.textContent = assignedKeyWatermark;
                     assignedKeyElement.title = `割り当てキー: ${assignedKeyLabel}`;
                 }
                 ui.playerList.appendChild(div);
@@ -1316,9 +1620,66 @@
             updateDisplay();
         });
 
+        function setRulePreset(presetId) {
+            const preset = LiliceQuizRules.getRulePreset(presetId);
+            if (!preset) return;
+            let selectedDuelPlayerIds = null;
+            if (preset.scoreRule === 'suitei-duel') {
+                selectedDuelPlayerIds = [ui.duelPlayerA.value, ui.duelPlayerB.value];
+                if (!selectedDuelPlayerIds[0] || !selectedDuelPlayerIds[1] || selectedDuelPlayerIds[0] === selectedDuelPlayerIds[1]) {
+                    ui.rulePresetSelect.value = LiliceQuizRules.getMatchingRulePreset({
+                        mode, scoreRule, winCondition, loseCondition, restQuestions, nyDisqualification
+                    });
+                    showMessage('対決ルールは別々のプレイヤーを2人選んでください。');
+                    return;
+                }
+            }
+            saveState();
+            if (selectedDuelPlayerIds) {
+                duelPlayerIds = selectedDuelPlayerIds;
+            }
+            mode = preset.answerMode;
+            scoreRule = preset.scoreRule;
+            winCondition = preset.winCondition;
+            loseCondition = preset.loseCondition;
+            restQuestions = preset.restQuestions;
+            nyDisqualification = preset.nyDisqualification;
+            players.forEach(player => {
+                player.restQuestionsRemaining = 0;
+                player.restQuestionsPending = 0;
+                player.swedishPenaltyMarks = 0;
+                player.upDownScore = 0;
+                if (scoreRule === 'suitei-duel') {
+                    if (duelPlayerIds.includes(player.id)) {
+                        player.duelPoints = 0;
+                        player.status = 'active';
+                    }
+                } else {
+                    player.duelPoints = 0;
+                    updatePlayerStatus(player);
+                }
+            });
+            duelOpponentChanceFor = '';
+            resetBuzzer(false, false);
+            applyStateToUI();
+            updateDisplay();
+            saveAppState();
+        }
+
         function setMode(m) {
             if (!LiliceQuizRules.answerModes.some(rule => rule.id === m) || mode === m) return;
             saveState();
+            if (scoreRule === 'suitei-duel' && m !== 'duel') {
+                scoreRule = 'marks-eliminate';
+                duelOpponentChanceFor = '';
+                duelPlayerIds.forEach(playerId => {
+                    const player = players.find(item => item.id === playerId);
+                    if (player) {
+                        player.duelPoints = 0;
+                        player.status = 'active';
+                    }
+                });
+            }
             mode = m;
             applyStateToUI();
             resetBuzzer(false, false);
@@ -1328,10 +1689,14 @@
         function setScoreRule(ruleId) {
             if (!LiliceQuizRules.scoreRules.some(rule => rule.id === ruleId) || scoreRule === ruleId) return;
             saveState();
+            if (scoreRule === 'suitei-duel') mode = 'endless';
             scoreRule = ruleId;
             players.forEach(player => {
                 player.restQuestionsRemaining = 0;
                 player.restQuestionsPending = 0;
+                player.swedishPenaltyMarks = 0;
+                player.upDownScore = 0;
+                player.duelPoints = 0;
                 updatePlayerStatus(player);
             });
             applyStateToUI();
@@ -1349,6 +1714,32 @@
             if (button) setScoreRule(button.dataset.scoreRule);
         });
 
+        ui.rulePresetSelect.addEventListener('change', event => {
+            setRulePreset(event.currentTarget.value);
+        });
+
+        const onDuelPlayersChanged = () => {
+            const selectedPlayerIds = [ui.duelPlayerA.value, ui.duelPlayerB.value];
+            if (selectedPlayerIds[0] && selectedPlayerIds[1] && selectedPlayerIds[0] !== selectedPlayerIds[1]) {
+                saveState();
+                duelPlayerIds = selectedPlayerIds;
+                duelOpponentChanceFor = '';
+                selectedPlayerIds.forEach(playerId => {
+                    const player = players.find(item => item.id === playerId);
+                    if (player) {
+                        player.duelPoints = 0;
+                        player.status = 'active';
+                    }
+                });
+                resetBuzzer(false, false);
+                saveAppState();
+                applyStateToUI();
+                updateDisplay();
+            }
+        };
+        ui.duelPlayerA.addEventListener('change', onDuelPlayersChanged);
+        ui.duelPlayerB.addEventListener('change', onDuelPlayersChanged);
+
         ui.lightweightModeInput.addEventListener('change', event => {
             lightweightMode = event.currentTarget.checked;
             applyStateToUI();
@@ -1356,7 +1747,7 @@
         });
 
         ui.winScoreInput.addEventListener('change', (e) => {
-            const nextWinCondition = clampInteger(e.target.value, 1, 99, 3);
+            const nextWinCondition = clampInteger(e.target.value, 1, 999, 3);
             if (nextWinCondition === winCondition) {
                 e.target.value = winCondition;
                 return;
@@ -1459,7 +1850,12 @@
                 if (!p.name || p.name.trim() === '') {
                     hasError = true;
                 }
-                newPlayers.push({ ...p, name: p.name.trim() });
+                newPlayers.push({
+                    ...p,
+                    name: p.name.trim(),
+                    answerOCount: Number.isFinite(p.answerOCount) ? p.answerOCount : (p.correct || 0),
+                    answerXCount: Number.isFinite(p.answerXCount) ? p.answerXCount : (p.incorrect || 0)
+                });
             });
 
             if (hasError) {
@@ -1468,6 +1864,7 @@
             }
 
             players = newPlayers;
+            duelPlayerIds = duelPlayerIds.filter(playerId => newPlayers.some(player => player.id === playerId));
             systemKeys = { ...editingSystemKeys };
             if (readerId && !newPlayers.some(player => player.id === readerId)) {
                 readerId = newPlayers[0]?.id || '';
@@ -1476,12 +1873,22 @@
             updateDisplay();
             updateButtonLabels();
             renderReaderPicker();
+            renderDuelPlayerOptions();
             saveAppState(); // 保存して閉じたときに状態を記録
         });
 
         document.getElementById('btn-add-player').addEventListener('click', () => {
             const newId = `new_${Date.now()}`;
-            editingPlayers.push({ id: newId, name: `プレイヤー${editingPlayers.length + 1}`, key: '', correct:0, incorrect:0, status:'active' });
+            editingPlayers.push({
+                id: newId,
+                name: `プレイヤー${editingPlayers.length + 1}`,
+                key: '',
+                correct: 0,
+                incorrect: 0,
+                answerOCount: 0,
+                answerXCount: 0,
+                status: 'active'
+            });
             renderSettingsModal();
         });
 
@@ -1582,9 +1989,11 @@
             }
             renderAnswerModeOptions();
             renderScoreRuleOptions();
+            renderRulePresetOptions();
             applyStateToUI();  // UIに反映
             updateDisplay();
             updateButtonLabels();
+            updateDisplay();
             renderReaderPicker();
             
             try {

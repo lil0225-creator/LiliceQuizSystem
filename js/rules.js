@@ -1,13 +1,9 @@
-const answerModes = Object.freeze([
-    Object.freeze({ id: 'single', label: 'シングル', incorrectAction: 'end', queueLimit: 1 }),
-    Object.freeze({ id: 'endless', label: 'エンドレス', incorrectAction: 'advance', queueLimit: null }),
-    Object.freeze({ id: 'second', label: '2着切り', incorrectAction: 'advance-if-queued', queueLimit: 2 })
-]);
-const scoreRules = Object.freeze([
-    Object.freeze({ id: 'marks-rest', label: 'N〇N休' }),
-    Object.freeze({ id: 'marks-eliminate', label: 'N〇N✕' }),
-    Object.freeze({ id: 'ny', label: 'NYルール' })
-]);
+import { answerModes } from './rules/answer-modes.js';
+import { rulePresets } from './rules/presets.js';
+import { scoringRules } from './rules/scoring/index.js';
+
+const scoringRuleById = new Map(scoringRules.map(rule => [rule.id, rule]));
+const scoreRules = Object.freeze(scoringRules.map(({ id, label }) => Object.freeze({ id, label })));
 const defaultMissLimitRule = 'eliminate';
 const missLimitRules = Object.freeze({
     eliminate: Object.freeze({
@@ -25,11 +21,46 @@ const missLimitRules = Object.freeze({
     })
 });
 
-window.LiliceQuizRules = Object.freeze({
+function getScoringRule(id) {
+    return scoringRuleById.get(id) || scoringRuleById.get('marks-eliminate');
+}
+
+const LiliceQuizRules = Object.freeze({
     answerModes,
     scoreRules,
+    rulePresets,
     defaultMissLimitRule,
     missLimitRules,
+    getScoreRule(id) {
+        return scoreRules.find(rule => rule.id === id) || scoreRules[1];
+    },
+    getRulePreset(id) {
+        return rulePresets.find(preset => preset.id === id) || null;
+    },
+    getDuelTarget() {
+        return 15;
+    },
+    applyDuelCorrect(player, isOpponentResponse) {
+        return getScoringRule('suitei-duel').applyCorrect(player, { isOpponentResponse });
+    },
+    applyDuelIncorrect(player, opponent, isOpponentResponse) {
+        return getScoringRule('suitei-duel').applyIncorrect(player, { opponent, isOpponentResponse });
+    },
+    getMatchingRulePreset(settings) {
+        return rulePresets.find(preset => {
+            if (preset.answerMode !== settings.mode
+                || preset.scoreRule !== settings.scoreRule
+                || preset.winCondition !== settings.winCondition) return false;
+            if (preset.scoreRule === 'suitei-duel') return true;
+            if (preset.scoreRule === 'marks-eliminate' || preset.scoreRule === 'up-down'
+                || preset.scoreRule === 'swedish10' || preset.scoreRule === 'ten-by-ten') {
+                return preset.loseCondition === settings.loseCondition;
+            }
+            if (preset.scoreRule === 'marks-rest') return preset.restQuestions === settings.restQuestions;
+            if (preset.scoreRule === 'ny') return preset.nyDisqualification === settings.nyDisqualification;
+            return true;
+        })?.id || 'custom';
+    },
     getAnswerMode(id) {
         return answerModes.find(rule => rule.id === id) || answerModes[0];
     },
@@ -39,14 +70,30 @@ window.LiliceQuizRules = Object.freeze({
         if (action === 'advance-if-queued') return hasQueuedPlayer ? 'advance' : 'end';
         return 'advance-or-wait';
     },
-    getPlayerScore(player, scoreRuleId) {
-        return scoreRuleId === 'ny' ? player.correct - player.incorrect : player.correct;
+    getPlayerScore(player, scoreRuleId, settings = {}) {
+        return getScoringRule(scoreRuleId).getScore(player, settings);
+    },
+    getScorePresentation(player, scoreRuleId, settings = {}) {
+        return getScoringRule(scoreRuleId).getPresentation(player, settings);
+    },
+    applyCorrect(player, scoreRuleId, settings = {}) {
+        return getScoringRule(scoreRuleId).applyCorrect(player, settings);
+    },
+    applyIncorrect(player, scoreRuleId, settings = {}) {
+        return getScoringRule(scoreRuleId).applyIncorrect(player, settings);
+    },
+    isPlayerDisqualified(player, scoreRuleId, settings = {}) {
+        return getScoringRule(scoreRuleId).isDisqualified(player, settings);
     },
     normalizeScoreRule(id) {
         if (id === 'standard') return 'marks-eliminate';
-        return scoreRules.some(rule => rule.id === id) ? id : scoreRules[1].id;
+        return scoringRuleById.has(id) ? id : 'marks-eliminate';
     },
     getMissLimitRule(id) {
         return missLimitRules[id] || missLimitRules[defaultMissLimitRule];
     }
 });
+
+window.LiliceQuizRules = LiliceQuizRules;
+
+export { LiliceQuizRules };
