@@ -26,8 +26,8 @@ export const rulePresets = Object.freeze([
     Object.freeze({
         id: '7-up-down',
         label: '7 Up/Down',
-        description: '正解で+1、誤答で−1。7点到達で勝ち抜け、失格なし。',
-        scoreRule: 'ny', answerMode: 'endless', winCondition: 7, loseCondition: 0, restQuestions: 1, nyDisqualification: 0
+        description: '正解で+1。初回誤答で点数を0に戻す。7点到達で勝ち抜け、失格なし。',
+        scoreRule: 'up-down', answerMode: 'endless', winCondition: 7, loseCondition: 0, restQuestions: 1, nyDisqualification: 0
     }),
     Object.freeze({
         id: '10-up-down',

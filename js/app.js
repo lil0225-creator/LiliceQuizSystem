@@ -354,7 +354,12 @@ import { LiliceQuizRules } from './rules.js';
             const isDuelRule = scoreRule === 'suitei-duel';
             const isPointRule = isNYRule || scoreRule === 'up-down';
             const isTenByTenRule = scoreRule === 'ten-by-ten';
-            const scoreRuleLabel = LiliceQuizRules.scoreRules.find(rule => rule.id === scoreRule)?.label || 'N〇N✕';
+            const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
+                mode, scoreRule, winCondition, loseCondition, restQuestions, nyDisqualification
+            });
+            const scoreRuleLabel = matchingPreset === '7-up-down'
+                ? '7 Up/Down'
+                : (LiliceQuizRules.scoreRules.find(rule => rule.id === scoreRule)?.label || 'N〇N✕');
             document.getElementById('rule-summary-scoring-rule').textContent = scoreRuleLabel;
             const winUnit = isPointRule || isDuelRule ? '点' : (isTenByTenRule ? '積' : 'マル');
             document.getElementById('win-condition-unit').textContent = winUnit;
@@ -380,9 +385,6 @@ import { LiliceQuizRules } from './rules.js';
             ui.duelPlayerFields.classList.toggle('grid', isDuelRule);
             document.getElementById('lose-condition-title').textContent = isSwedishRule ? '失格（累計×数）' : '失格（誤答数）';
             document.getElementById('lose-condition-unit').textContent = isSwedishRule ? '×（0で無効）' : 'バツ（0で無効）';
-            const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
-                mode, scoreRule, winCondition, loseCondition, restQuestions, nyDisqualification
-            });
             ui.rulePresetSelect.value = matchingPreset;
             ui.rulePresetDescription.textContent = LiliceQuizRules.getRulePreset(matchingPreset)?.description
                 || '現在の設定を個別に組み合わせています。';
@@ -418,7 +420,7 @@ import { LiliceQuizRules } from './rules.js';
         }
 
         function renderScoreRuleOptions() {
-            const buttons = LiliceQuizRules.scoreRules.filter(rule => rule.id !== 'suitei-duel').map(rule => {
+            const buttons = LiliceQuizRules.scoreRules.map(rule => {
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.scoreRule = rule.id;
@@ -1688,17 +1690,39 @@ import { LiliceQuizRules } from './rules.js';
 
         function setScoreRule(ruleId) {
             if (!LiliceQuizRules.scoreRules.some(rule => rule.id === ruleId) || scoreRule === ruleId) return;
+            let selectedDuelPlayerIds = null;
+            if (ruleId === 'suitei-duel') {
+                selectedDuelPlayerIds = [ui.duelPlayerA.value, ui.duelPlayerB.value];
+                if (selectedDuelPlayerIds.some(playerId => !players.some(player => player.id === playerId))
+                    || selectedDuelPlayerIds[0] === selectedDuelPlayerIds[1]) {
+                    showMessage('対決ルールは別々のプレイヤーを2人選んでください。');
+                    return;
+                }
+            }
             saveState();
-            if (scoreRule === 'suitei-duel') mode = 'endless';
+            if (selectedDuelPlayerIds) duelPlayerIds = selectedDuelPlayerIds;
+            if (scoreRule === 'suitei-duel' && ruleId !== 'suitei-duel') mode = 'endless';
             scoreRule = ruleId;
+            if (scoreRule === 'suitei-duel') mode = 'duel';
+            if (scoreRule === 'suitei-duel') {
+                winCondition = LiliceQuizRules.getDuelTarget();
+                loseCondition = 0;
+                restQuestions = 0;
+            }
             players.forEach(player => {
                 player.restQuestionsRemaining = 0;
                 player.restQuestionsPending = 0;
                 player.swedishPenaltyMarks = 0;
                 player.upDownScore = 0;
                 player.duelPoints = 0;
-                updatePlayerStatus(player);
+                if (scoreRule === 'suitei-duel') {
+                    if (duelPlayerIds.includes(player.id)) player.status = 'active';
+                } else {
+                    updatePlayerStatus(player);
+                }
             });
+            duelOpponentChanceFor = '';
+            resetBuzzer(false, false);
             applyStateToUI();
             updateDisplay();
             saveAppState();
