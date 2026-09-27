@@ -1063,13 +1063,18 @@
 
             container.innerHTML = '';
             const noReaderButton = document.createElement('button');
-            noReaderButton.className = 'px-3 py-2 rounded border-2 text-sm font-bold transition';
-            noReaderButton.classList.add(readerId === '' ? 'border-amber-300' : 'border-transparent');
-            noReaderButton.classList.add('bg-slate-800');
+            const hasNoReader = readerId === '';
+            noReaderButton.className = `px-3 py-2 rounded border border-dashed text-sm font-bold transition ${hasNoReader ? 'border-amber-300 bg-amber-950/50 text-amber-200' : 'border-slate-600 bg-slate-900/60 text-slate-400 hover:border-slate-400 hover:text-slate-200'}`;
             noReaderButton.textContent = 'なし';
-            noReaderButton.title = '読み手なしに設定';
+            noReaderButton.title = '問読みなしに設定';
+            noReaderButton.setAttribute('aria-pressed', String(hasNoReader));
             noReaderButton.addEventListener('click', () => selectReader(''));
             container.appendChild(noReaderButton);
+
+            const divider = document.createElement('span');
+            divider.className = 'mx-1 self-stretch border-l border-slate-700';
+            divider.setAttribute('aria-hidden', 'true');
+            container.appendChild(divider);
 
             players.forEach(player => {
                 const button = document.createElement('button');
@@ -1078,7 +1083,7 @@
                 button.classList.add(isReader ? 'border-amber-300' : 'border-transparent');
                 button.classList.add('bg-slate-800');
                 renderPlayerName(button, player.name);
-                button.title = '読み手に設定';
+                button.title = '問読み担当に設定';
                 button.addEventListener('click', () => selectReader(player.id));
                 container.appendChild(button);
             });
