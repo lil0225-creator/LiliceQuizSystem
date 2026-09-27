@@ -15,6 +15,9 @@
             <h1 class="text-3xl font-Lilice font-bold text-cyan-400 tracking-wider drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">Lilice QUIZ SYSTEM</h1>
         </div>
         <div class="flex gap-4">
+            <button id="btn-manual" type="button" aria-label="マニュアル" title="マニュアル" class="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-700 bg-slate-800 text-xl font-bold text-cyan-200 transition hover:bg-slate-700">
+                ？
+            </button>
             <button id="btn-undo" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 transition text-sm font-bold opacity-50 cursor-not-allowed">
                 ↩️ 戻す
             </button>
@@ -67,6 +70,10 @@
                     <span>RST</span>
                     <span class="text-xs font-sans mt-1" id="label-reset-key">リセット (SPACE)</span>
                 </button>
+                <button id="btn-skip" type="button" aria-label="この問題をスルー" title="この問題をスルー" class="w-24 h-24 rounded-full border-2 border-amber-500 bg-amber-950 hover:bg-amber-900 flex flex-col items-center justify-center text-amber-300 text-2xl font-bold transition">
+                    <span>PASS</span>
+                    <span id="label-skip-key" class="text-xs font-sans mt-1">スルー (S)</span>
+                </button>
             </div>
         </div>
 
@@ -77,7 +84,10 @@
             <section id="rule-summary" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="rule-settings-modal" aria-label="ルール設定を開く" class="Lilice-panel cursor-pointer rounded-xl p-4 flex-shrink-0 transition-colors hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
                 <div class="flex items-center justify-between mb-2 border-b border-cyan-800/80 pb-1">
                     <h2 class="font-Lilice text-cyan-400 text-sm">RULES</h2>
-                    <span class="text-[10px] text-slate-400">クリックで変更</span>
+                    <div class="flex items-center gap-2">
+                        <span id="rule-summary-scoring-rule" class="text-[10px] text-cyan-200">N〇N✕</span>
+                        <span class="text-[10px] text-slate-400">クリックで変更</span>
+                    </div>
                 </div>
                 <div class="grid grid-cols-[1fr_1.5fr_1.5fr] items-stretch gap-3 text-center">
                     <div class="aspect-square self-center rounded-lg border border-cyan-300/80 bg-cyan-900/70 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_12px_rgba(8,145,178,0.12)] flex flex-col items-center justify-center">
@@ -86,11 +96,11 @@
                     </div>
                     <div class="min-h-[112px] rounded-lg border-2 border-emerald-300 bg-emerald-800 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_14px_rgba(16,185,129,0.18)] flex flex-col justify-center">
                         <span class="block text-lg font-bold text-emerald-50">勝ち抜け</span>
-                        <span class="mt-1 block font-Lilice text-5xl font-bold text-white"><span id="rule-summary-win">3</span><span class="ml-1 text-xl font-sans">マル</span></span>
+                        <span class="mt-1 block font-Lilice text-5xl font-bold text-white"><span id="rule-summary-win">3</span><span id="rule-summary-win-unit" class="ml-1 text-xl font-sans">マル</span></span>
                     </div>
-                    <div class="min-h-[112px] rounded-lg border-2 border-rose-300 bg-rose-800 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_14px_rgba(244,63,94,0.18)] flex flex-col justify-center">
+                    <div id="rule-summary-lose-card" class="min-h-[112px] rounded-lg border-2 border-rose-300 bg-rose-800 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_14px_rgba(244,63,94,0.18)] flex flex-col justify-center">
                         <span id="rule-summary-lose-label" class="block text-lg font-bold text-rose-50">失格</span>
-                        <span class="mt-1 block font-Lilice text-5xl font-bold text-white"><span id="rule-summary-lose">2</span><span class="ml-1 text-xl font-sans">バツ</span></span>
+                        <span class="mt-1 block font-Lilice text-5xl font-bold text-white"><span id="rule-summary-lose">2</span><span id="rule-summary-lose-unit" class="ml-1 text-xl font-sans">バツ</span></span>
                     </div>
                 </div>
             </section>
@@ -120,6 +130,11 @@
             </div>
 
             <div class="mb-5">
+                <span class="mb-2 block text-xs font-bold text-slate-300">ルール</span>
+                <div id="score-rule-options" class="grid grid-cols-3 gap-2 rounded-lg bg-slate-900 p-1.5"></div>
+            </div>
+
+            <div class="mb-5">
                 <span class="mb-2 block text-xs font-bold text-slate-300">解答チャンス</span>
                 <div id="answer-mode-options" class="grid grid-cols-3 gap-2 rounded-lg bg-slate-900 p-1.5"></div>
             </div>
@@ -129,14 +144,28 @@
                     <span class="mb-2 block text-sm font-bold text-emerald-50">勝ち抜け</span>
                     <span class="flex items-center gap-2">
                         <input type="number" id="win-condition" value="3" min="1" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-emerald-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-emerald-200">
-                        <span class="text-sm font-bold text-emerald-50 whitespace-nowrap">マル</span>
+                        <span id="win-condition-unit" class="text-sm font-bold text-emerald-50 whitespace-nowrap">マル</span>
                     </span>
                 </label>
-                <label class="block rounded-lg border border-rose-300 bg-rose-800 p-4">
-                    <span class="mb-2 block text-sm font-bold text-rose-50">失格</span>
+                <label id="lose-condition-field" class="block rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span id="lose-condition-title" class="mb-2 block text-sm font-bold text-rose-50">失格</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="lose-condition" value="2" min="1" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
-                        <span class="text-sm font-bold text-rose-50 whitespace-nowrap">バツ</span>
+                        <input type="number" id="lose-condition" value="2" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span id="lose-condition-unit" class="text-sm font-bold text-rose-50 whitespace-nowrap">バツ</span>
+                    </span>
+                </label>
+                <label id="rest-questions-field" class="hidden rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span class="mb-2 block text-sm font-bold text-rose-50">N休</span>
+                    <span class="flex items-center gap-2">
+                        <input type="number" id="rest-questions" value="1" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span class="text-sm font-bold text-rose-50 whitespace-nowrap">問（0で無効）</span>
+                    </span>
+                </label>
+                <label id="ny-disqualification-field" class="hidden rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span class="mb-2 block text-sm font-bold text-rose-50">失格（マイナス点）</span>
+                    <span class="flex items-center gap-2">
+                        <input type="number" id="ny-disqualification" value="0" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span class="text-sm font-bold text-rose-50 whitespace-nowrap">点（0で無効）</span>
                     </span>
                 </label>
             </div>
@@ -253,6 +282,66 @@
         </div>
     </div>
     
+    <div id="manual-modal" class="fixed inset-0 bg-black/80 z-50 flex justify-center items-center hidden backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="manual-title">
+        <section class="w-full max-w-3xl max-h-[90vh] rounded-xl border-2 border-cyan-500 bg-slate-800 p-5 md:p-6 shadow-[0_0_30px_rgba(6,182,212,0.3)] flex flex-col">
+            <div class="mb-4 flex items-center justify-between border-b border-slate-600 pb-3">
+                <h2 id="manual-title" class="font-Lilice text-xl font-bold text-cyan-300">HOW TO PLAY <span class="font-sans text-base">/ マニュアル</span></h2>
+                <button id="btn-close-manual" type="button" class="rounded border border-slate-500 bg-slate-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-slate-600">閉じる</button>
+            </div>
+            <div class="overflow-y-auto pr-2">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                    <section>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">基本操作</h3>
+                        <ul class="space-y-2 text-sm leading-relaxed text-slate-200">
+                            <li>プレイヤーのキーを押して早押しします。名前をクリックするとキーを変更できます。</li>
+                            <li><strong class="text-emerald-300">正解ボタン</strong>で正解、<strong class="text-rose-300">不正解ボタン</strong>で誤答を記録します。</li>
+                            <li><strong class="text-slate-200">リセットボタン</strong>で進行中の問題をリセットします。</li>
+                            <li><strong class="text-amber-300">スルーボタン</strong>は正誤を付けずに問題を終了します。N休の休み問題数も進みます。</li>
+                        </ul>
+                    </section>
+                    <section>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">プレイヤーを追加</h3>
+                        <ol class="space-y-2 text-sm leading-relaxed text-slate-200">
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">1.</span>右上の「設定」を開きます。</li>
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">2.</span>「PLAYERS」の「+ 追加」を押して名前を入力します。</li>
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">3.</span>「保存して閉じる」を押し、一覧の名前をクリックしてキーを割り当てます。</li>
+                        </ol>
+                    </section>
+                    <section>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">解答チャンス</h3>
+                        <ul class="space-y-2 text-sm leading-relaxed text-slate-200">
+                            <li><strong class="text-white">シングル</strong>：誤答でその問題を終了。</li>
+                            <li><strong class="text-white">エンドレス</strong>：誤答後も次の解答者へ進みます。待機者がいなくなるとRST待ちになります。</li>
+                            <li><strong class="text-white">2着切り</strong>：最大2人まで解答権を受け付けます。後続がいない時、または2人目が誤答すると終了。</li>
+                        </ul>
+                    </section>
+                    <section class="md:col-span-2">
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">ルール</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm leading-relaxed text-slate-200">
+                            <div><strong class="text-white">N〇N休</strong><p class="mt-1">勝ち抜けは設定〇数。1✕で設定したN問休み、終了後に復帰します。N=0で休みなし。</p></div>
+                            <div><strong class="text-white">N〇N✕</strong><p class="mt-1">設定〇数で勝ち抜け、設定✕数で失格。✕数=0で失格なし。</p></div>
+                            <div><strong class="text-white">NYルール</strong><p class="mt-1">〇で+1点、✕で-1点。設定ポイントで勝ち抜け、設定したマイナス点で失格。失格点=0で無効。</p></div>
+                        </div>
+                    </section>
+                    <section class="md:col-span-2">
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">その他</h3>
+                        <p class="text-sm leading-relaxed text-slate-200">「戻す」は直前の操作をUndoします。スコア欄の「編集」では得点を手動修正できます。スコアリセットは全員の得点を0にして新しい試合を開始します。</p>
+                    </section>
+                    <section class="md:col-span-2">
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">お問い合わせ・要望</h3>
+                        <a href="https://x.com/LilIce20_VRC" target="_blank" rel="noopener noreferrer" aria-label="りるのX、@LilIce20_VRC" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-300 underline decoration-cyan-700 underline-offset-4 hover:text-cyan-100">
+                            <span>りる</span>
+                            <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true" focusable="false">
+                                <path d="M18.9 1.15h3.68l-8.04 9.19 9.45 13.46h-7.4l-5.8-8.21-6.63 8.21H.47l8.6-10.06L0 1.15h7.59l5.24 7.33zM17.61 21.28h2.04L6.47 3.29H4.28z" />
+                            </svg>
+                            <span class="text-xs font-normal text-slate-400">@LilIce20_VRC</span>
+                        </a>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <!-- 決着オーバーレイ -->
     <div id="result-overlay" class="fixed inset-0 bg-black/90 z-40 flex flex-col justify-center items-center hidden backdrop-blur-md">
         <div id="result-title" class="text-8xl font-Lilice font-bold mb-4 tracking-widest text-white">WINNER!</div>

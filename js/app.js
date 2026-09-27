@@ -10,23 +10,60 @@
         let matchHistory = [];
 
         function ensurePlayerKeys() {
-            players.forEach((player, index) => {
+            const reservedPlayerKeys = new Set(players
+                .map(player => typeof player.key === 'string' ? player.key.toLowerCase() : '')
+                .filter(Boolean));
+            const usedKeys = new Set(Object.values(systemKeys)
+                .filter(key => typeof key === 'string' && key.length > 0)
+                .map(key => key.toLowerCase()));
+            let fallbackKeyNumber = 1;
+
+            players.forEach(player => {
                 delete player.buttonColor;
-                if (!player.key) player.key = String(index % 4 + 1);
+                let key = typeof player.key === 'string' ? player.key.toLowerCase() : '';
+                if (!key || usedKeys.has(key)) {
+                    while (usedKeys.has(String(fallbackKeyNumber)) || reservedPlayerKeys.has(String(fallbackKeyNumber))) {
+                        fallbackKeyNumber++;
+                    }
+                    key = String(fallbackKeyNumber++);
+                }
+                player.key = key;
+                usedKeys.add(key);
+
+                player.restingForQuestion = Boolean(player.restingForQuestion);
+                player.restNextQuestion = Boolean(player.restNextQuestion);
+                player.restQuestionsRemaining = Number.isFinite(player.restQuestionsRemaining)
+                    ? Math.max(0, player.restQuestionsRemaining)
+                    : (player.restingForQuestion ? 1 : 0);
+                player.restQuestionsPending = Number.isFinite(player.restQuestionsPending)
+                    ? Math.max(0, player.restQuestionsPending)
+                    : (player.restNextQuestion ? 1 : 0);
+                delete player.restingForQuestion;
+                delete player.restNextQuestion;
             });
         }
 
         let systemKeys = {
             correct: 'o',
             incorrect: 'x',
-            reset: ' ' // space
+            reset: ' ', // space
+            skip: 's'
         };
 
         let mode = LiliceQuizRules.answerModes[0].id;
+        let scoreRule = LiliceQuizRules.scoreRules[1].id;
         const missLimitRule = LiliceQuizRules.getMissLimitRule(LiliceQuizRules.defaultMissLimitRule);
         let lightweightMode = false;
         let winCondition = 3;
         let loseCondition = 2;
+        let restQuestions = 1;
+        let nyDisqualification = 0;
+
+        function clampInteger(value, minimum, maximum, fallback) {
+            const parsed = Number.parseInt(value, 10);
+            if (!Number.isFinite(parsed)) return fallback;
+            return Math.min(maximum, Math.max(minimum, parsed));
+        }
 
         let queue = []; // 早押ししたプレイヤーのid配列
         let isAcceptingInputs = true; // 誰も押していない状態か
@@ -130,7 +167,7 @@
 
         function saveAppState() {
             const state = {
-                players, readerId, systemKeys, mode, lightweightMode, winCondition, loseCondition, soundVolumes,
+                players, readerId, systemKeys, mode, scoreRule, lightweightMode, winCondition, loseCondition, restQuestions, nyDisqualification, soundVolumes,
                 soundVolumeDefaultsVersion: SOUND_VOLUME_DEFAULTS_VERSION,
                 matchHistory
             };
@@ -145,11 +182,14 @@
                     const state = JSON.parse(saved);
                     if (state.players) players = state.players;
                     if (Object.prototype.hasOwnProperty.call(state, 'readerId')) readerId = state.readerId;
-                    if (state.systemKeys) systemKeys = state.systemKeys;
+                    if (state.systemKeys) systemKeys = { ...systemKeys, ...state.systemKeys };
                     if (LiliceQuizRules.answerModes.some(rule => rule.id === state.mode)) mode = state.mode;
+                    scoreRule = LiliceQuizRules.normalizeScoreRule(state.scoreRule);
                     if (typeof state.lightweightMode === 'boolean') lightweightMode = state.lightweightMode;
-                    if (state.winCondition) winCondition = state.winCondition;
-                    if (state.loseCondition) loseCondition = state.loseCondition;
+                    winCondition = clampInteger(state.winCondition, 1, 99, winCondition);
+                    loseCondition = clampInteger(state.loseCondition, 0, 99, loseCondition);
+                    restQuestions = clampInteger(state.restQuestions, 0, 99, restQuestions);
+                    nyDisqualification = clampInteger(state.nyDisqualification, 0, 99, nyDisqualification);
                     if (state.soundVolumes) {
                         soundVolumes = { ...soundVolumes, ...state.soundVolumes };
                         if (state.soundVolumeDefaultsVersion !== SOUND_VOLUME_DEFAULTS_VERSION) {
@@ -181,10 +221,11 @@
 
             const totals = new Map();
             matchHistory.forEach(match => match.players.forEach(record => {
-                const total = totals.get(record.id) || { name: record.name, correct: 0, incorrect: 0 };
+                const total = totals.get(record.id) || { name: record.name, correct: 0, incorrect: 0, wins: 0 };
                 total.name = record.name;
                 total.correct += record.correct;
                 total.incorrect += record.incorrect;
+                total.wins += Number.isFinite(record.wins) ? record.wins : 0;
                 totals.set(record.id, total);
             }));
 
@@ -206,19 +247,22 @@
                 name.className = 'font-bold text-white truncate mr-4';
                 name.textContent = record.name;
                 const scores = document.createElement('span');
-                scores.className = 'font-Lilice text-lg whitespace-nowrap';
+                scores.className = 'flex flex-wrap items-center justify-end gap-x-3 font-Lilice text-lg whitespace-nowrap';
                 const correct = document.createElement('span');
                 correct.className = 'text-emerald-400';
                 correct.textContent = `〇${record.correct}`;
                 const incorrect = document.createElement('span');
                 incorrect.className = 'text-rose-400 ml-4';
                 incorrect.textContent = `✖${record.incorrect}`;
-                scores.append(correct, incorrect);
+                const wins = document.createElement('span');
+                wins.className = 'font-sans text-xs text-amber-300';
+                wins.textContent = Number.isFinite(record.wins) ? `WIN ${record.wins}` : 'WIN —';
+                scores.append(correct, incorrect, wins);
                 row.append(name, scores);
                 containerElement.appendChild(row);
             };
 
-            const totalsSection = createSection('累計', 'text-amber-300');
+            const totalsSection = createSection('累計（WIN数は今回以降）', 'text-amber-300');
             totals.forEach(record => appendRecord(totalsSection.rows, record));
             container.appendChild(totalsSection.section);
 
@@ -241,16 +285,37 @@
         function applyStateToUI() {
             ui.winScoreInput.value = winCondition;
             ui.loseScoreInput.value = loseCondition;
+            ui.restQuestionsInput.value = restQuestions;
+            ui.nyDisqualificationInput.value = nyDisqualification;
             document.getElementById('rule-summary-mode').textContent = LiliceQuizRules.getAnswerMode(mode).label;
             document.getElementById('rule-summary-win').textContent = winCondition;
-            document.getElementById('rule-summary-lose-label').textContent = '失格';
-            document.getElementById('rule-summary-lose').textContent = loseCondition;
+            const isNYRule = scoreRule === 'ny';
+            const isRestRule = scoreRule === 'marks-rest';
+            const scoreRuleLabel = LiliceQuizRules.scoreRules.find(rule => rule.id === scoreRule)?.label || 'N〇N✕';
+            document.getElementById('rule-summary-scoring-rule').textContent = scoreRuleLabel;
+            document.getElementById('win-condition-unit').textContent = isNYRule ? '点' : 'マル';
+            document.getElementById('rule-summary-win-unit').textContent = isNYRule ? '点' : 'マル';
+            document.getElementById('rule-summary-lose-label').textContent = isNYRule ? '失格' : (isRestRule ? '休み' : '失格');
+            document.getElementById('rule-summary-lose').textContent = isNYRule
+                ? (nyDisqualification > 0 ? `-${nyDisqualification}` : 'なし')
+                : (isRestRule ? (restQuestions > 0 ? restQuestions : 'なし') : (loseCondition > 0 ? loseCondition : 'なし'));
+            document.getElementById('rule-summary-lose-unit').textContent = isNYRule
+                ? (nyDisqualification > 0 ? '点' : '')
+                : (isRestRule ? (restQuestions > 0 ? '休' : '') : (loseCondition > 0 ? 'バツ' : ''));
+            document.getElementById('lose-condition-field').classList.toggle('hidden', isNYRule || isRestRule);
+            document.getElementById('rest-questions-field').classList.toggle('hidden', !isRestRule);
+            document.getElementById('ny-disqualification-field').classList.toggle('hidden', !isNYRule);
+            document.getElementById('lose-condition-title').textContent = '失格（誤答数）';
+            document.getElementById('lose-condition-unit').textContent = 'バツ（0で無効）';
             ui.lightweightModeInput.checked = lightweightMode;
             document.body.classList.toggle('lightweight-mode', lightweightMode);
             const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
             const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
             ui.answerModeOptions.querySelectorAll('[data-answer-mode]').forEach(button => {
                 button.className = button.dataset.answerMode === mode ? modeActiveClass : modeInactiveClass;
+            });
+            ui.scoreRuleOptions.querySelectorAll('[data-score-rule]').forEach(button => {
+                button.className = button.dataset.scoreRule === scoreRule ? modeActiveClass : modeInactiveClass;
             });
             soundTypes.forEach(type => {
                 const volSlider = document.getElementById(`vol-${type}`);
@@ -273,18 +338,30 @@
             ui.answerModeOptions.replaceChildren(...buttons);
         }
 
+        function renderScoreRuleOptions() {
+            const buttons = LiliceQuizRules.scoreRules.map(rule => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.dataset.scoreRule = rule.id;
+                button.className = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+                button.textContent = rule.label;
+                return button;
+            });
+            ui.scoreRuleOptions.replaceChildren(...buttons);
+        }
+
         // --- Web Audio API (フォールバック・デフォルト音用) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         function playDefaultSound(type) {
+            const vol = soundVolumes[type] ?? 0;
+            if (vol <= 0) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const t = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            
-            const vol = soundVolumes[type];
 
             if (type === 'buzzer') {
                 osc.type = 'sine';
@@ -449,8 +526,11 @@
                 matchHistory: JSON.parse(JSON.stringify(matchHistory)),
                 readerId: readerId,
                 mode: mode,
+                scoreRule: scoreRule,
                 winCondition: winCondition,
-                loseCondition: loseCondition
+                loseCondition: loseCondition,
+                restQuestions: restQuestions,
+                nyDisqualification: nyDisqualification
             });
             if (stateHistory.length > 30) stateHistory.shift(); // 最大30件保存
             updateUndoButton();
@@ -467,8 +547,11 @@
             matchHistory = prevState.matchHistory || [];
             readerId = prevState.readerId || '';
             mode = prevState.mode;
+            scoreRule = prevState.scoreRule || LiliceQuizRules.scoreRules[0].id;
             winCondition = prevState.winCondition;
             loseCondition = prevState.loseCondition;
+            restQuestions = prevState.restQuestions ?? 1;
+            nyDisqualification = prevState.nyDisqualification ?? 0;
             
             updateDisplay();
             updateUndoButton();
@@ -495,8 +578,24 @@
             return key;
         }
 
+        function getPlayerScore(player) {
+            return LiliceQuizRules.getPlayerScore(player, scoreRule);
+        }
+
+        function updatePlayerStatus(player) {
+            if (getPlayerScore(player) >= winCondition) {
+                player.status = 'win';
+            } else if (scoreRule === 'ny' && nyDisqualification > 0 && getPlayerScore(player) <= -nyDisqualification) {
+                player.status = 'lose';
+            } else if (scoreRule === 'marks-eliminate' && loseCondition > 0 && missLimitRule === LiliceQuizRules.missLimitRules.eliminate && player.incorrect >= loseCondition) {
+                player.status = 'lose';
+            } else {
+                player.status = 'active';
+            }
+        }
+
         function findEligiblePlayerByKey(key) {
-            return players.find(player => player.key === key && player.id !== readerId && player.status === 'active');
+            return players.find(player => player.key === key && player.id !== readerId && player.status === 'active' && player.restQuestionsRemaining === 0);
         }
 
         const playerNameSegmenter = typeof Intl.Segmenter === 'function'
@@ -556,11 +655,15 @@
             currentAnswerer: document.getElementById('current-answerer'),
             btnCorrect: document.getElementById('btn-correct'),
             btnIncorrect: document.getElementById('btn-incorrect'),
+            btnSkip: document.getElementById('btn-skip'),
             btnReset: document.getElementById('btn-reset'),
             playerList: document.getElementById('player-list'),
             answerModeOptions: document.getElementById('answer-mode-options'),
+            scoreRuleOptions: document.getElementById('score-rule-options'),
             winScoreInput: document.getElementById('win-condition'),
             loseScoreInput: document.getElementById('lose-condition'),
+            restQuestionsInput: document.getElementById('rest-questions'),
+            nyDisqualificationInput: document.getElementById('ny-disqualification'),
             settingsModal: document.getElementById('settings-modal'),
             playerInputsContainer: document.getElementById('player-inputs-container'),
             resultOverlay: document.getElementById('result-overlay'),
@@ -572,6 +675,8 @@
             btnResetScore: document.getElementById('btn-reset-score'),
             ruleSummary: document.getElementById('rule-summary'),
             ruleSettingsModal: document.getElementById('rule-settings-modal'),
+            manualModal: document.getElementById('manual-modal'),
+            btnCloseManual: document.getElementById('btn-close-manual'),
             lightweightModeInput: document.getElementById('lightweight-mode')
         };
 
@@ -592,15 +697,22 @@
             if (!player) return;
 
             const value = parseInt(scoreButton.dataset.val);
-            if (scoreButton.dataset.type === 'correct') {
+            if (scoreButton.dataset.type === 'points') {
+                const currentScore = getPlayerScore(player);
+                if (value > 0) {
+                    if (currentScore < 0) player.incorrect--;
+                    else player.correct++;
+                } else if (currentScore > 0) {
+                    player.correct--;
+                } else {
+                    player.incorrect++;
+                }
+            } else if (scoreButton.dataset.type === 'correct') {
                 player.correct = Math.max(0, player.correct + value);
-                if (player.correct >= winCondition) player.status = 'win';
-                else if (missLimitRule !== LiliceQuizRules.missLimitRules.eliminate || player.incorrect < loseCondition) player.status = 'active';
             } else if (scoreButton.dataset.type === 'incorrect') {
                 player.incorrect = Math.max(0, player.incorrect + value);
-                if (missLimitRule === LiliceQuizRules.missLimitRules.eliminate && player.incorrect >= loseCondition) player.status = 'lose';
-                else if (player.correct < winCondition) player.status = 'active';
             }
+            updatePlayerStatus(player);
 
             updateDisplay();
             saveAppState();
@@ -612,6 +724,14 @@
         window.addEventListener('keydown', (e) => {
             // 長押し(キーリピート)による連打反応を防止
             if (e.repeat) return;
+
+            if (!ui.manualModal.classList.contains('hidden')) {
+                if (e.key === 'Escape') {
+                    ui.manualModal.classList.add('hidden');
+                    e.preventDefault();
+                }
+                return;
+            }
             
             // --- 設定モーダルが開いていて、キー入力待ちの時 ---
             if (!ui.settingsModal.classList.contains('hidden')) {
@@ -683,6 +803,12 @@
             if (e.key.toLowerCase() === systemKeys.incorrect) { 
                 e.preventDefault(); ui.btnIncorrect.click(); return; 
             }
+
+            if (e.key.toLowerCase() === systemKeys.skip) {
+                e.preventDefault();
+                ui.btnSkip.click();
+                return;
+            }
             
             // リセットショートカット
             if (e.key.toLowerCase() === systemKeys.reset) { 
@@ -733,14 +859,16 @@
 
             p.correct++;
             playSound('correct');
+            updatePlayerStatus(p);
             
-            if (p.correct >= winCondition) {
-                p.status = 'win';
+            if (p.status === 'win') {
                 setTimeout(() => {
+                    const currentPlayer = players.find(player => player.id === pid);
+                    if (currentPlayer?.status !== 'win') return;
                     playSound('win');
-                    showResultOverlay(p.name, 'WINNER!', 'text-amber-400');
+                    showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-400');
                 }, 500);
-            } else if (p.correct === winCondition - 1 && winCondition > 1) {
+            } else if (getPlayerScore(p) === winCondition - 1 && winCondition > 1) {
                 // リーチに到達した瞬間
                 playSound('reach');
                 showCutin(`${p.name} REACH!`, 'reach');
@@ -768,16 +896,17 @@
             p.incorrect++;
             playSound('incorrect');
 
-            if (p.incorrect >= loseCondition) {
-                const missResult = missLimitRule.onLimit(p);
-                if (missResult === 'eliminated') {
-                    setTimeout(() => {
-                        playSound('lose');
-                        showResultOverlay(p.name, 'DISQUALIFIED', 'text-rose-500');
-                    }, 500);
-                }
-            } else if (p.incorrect === loseCondition - 1 && loseCondition > 1) {
-                // 飛びリーチ(失格まであと1)に到達した瞬間
+            updatePlayerStatus(p);
+            if (p.status === 'lose') {
+                setTimeout(() => {
+                    const currentPlayer = players.find(player => player.id === pid);
+                    if (currentPlayer?.status !== 'lose') return;
+                    playSound('lose');
+                    showResultOverlay(currentPlayer.name, 'DISQUALIFIED', 'text-rose-500');
+                }, 500);
+            } else if (scoreRule === 'marks-rest' && restQuestions > 0) {
+                p.restQuestionsPending = restQuestions;
+            } else if (scoreRule === 'marks-eliminate' && loseCondition > 0 && p.incorrect === loseCondition - 1 && loseCondition > 1) {
                 showCutin('DANGER!', 'danger');
             }
 
@@ -803,12 +932,31 @@
 
         ui.btnReset.addEventListener('click', () => {
             // 早押しがされていた場合のみ履歴に残す
-            if (queue.length > 0) saveState();
+            const hasQuestionInProgress = queue.length > 0;
+            if (hasQuestionInProgress) saveState();
+            resetBuzzer(false, hasQuestionInProgress);
+        });
+
+        ui.btnSkip.addEventListener('click', () => {
+            saveState();
             resetBuzzer(false);
+            saveAppState();
         });
 
         ui.btnCloseResult.addEventListener('click', () => {
             ui.resultOverlay.classList.add('hidden');
+        });
+
+        document.getElementById('btn-manual').addEventListener('click', () => {
+            ui.manualModal.classList.remove('hidden');
+        });
+
+        ui.btnCloseManual.addEventListener('click', () => {
+            ui.manualModal.classList.add('hidden');
+        });
+
+        ui.manualModal.addEventListener('click', event => {
+            if (event.target === ui.manualModal) ui.manualModal.classList.add('hidden');
         });
 
         document.getElementById('btn-history').addEventListener('click', () => {
@@ -843,7 +991,8 @@
                             id: player.id,
                             name: player.name,
                             correct: player.correct,
-                            incorrect: player.incorrect
+                            incorrect: player.incorrect,
+                            wins: player.status === 'win' ? 1 : 0
                         }))
                     });
                 }
@@ -851,6 +1000,8 @@
                     p.correct = 0;
                     p.incorrect = 0;
                     p.status = 'active';
+                    p.restQuestionsRemaining = 0;
+                    p.restQuestionsPending = 0;
                 });
                 resetBuzzer(false); // 早押し状態もリセットし、画面を更新
                 saveAppState();
@@ -867,12 +1018,23 @@
             updateDisplay();
         }
 
-        function resetBuzzer(shouldSaveState = true) {
+        function resetBuzzer(shouldSaveState = true, completesQuestion = true) {
             if (shouldSaveState && queue.length > 0) saveState();
+            if (completesQuestion) completeQuestion();
             queue = [];
             currentAnsweringIndex = -1;
             isAcceptingInputs = true;
             updateDisplay();
+        }
+
+        function completeQuestion() {
+            players.forEach(player => {
+                if (player.restQuestionsRemaining > 0) player.restQuestionsRemaining--;
+                if (player.restQuestionsPending > 0) {
+                    player.restQuestionsRemaining = Math.max(player.restQuestionsRemaining, player.restQuestionsPending);
+                    player.restQuestionsPending = 0;
+                }
+            });
         }
 
         function assignPlayerKey(playerId, key) {
@@ -890,7 +1052,7 @@
 
             saveState();
             readerId = nextReaderId;
-            resetBuzzer(false);
+            resetBuzzer(false, false);
             saveAppState();
             renderReaderPicker();
         }
@@ -991,7 +1153,9 @@
             // 人数に応じて文字サイズを動的に決定 (プロポーショナル化)
             // ▼▼全体的にサイズを一段階小さくしました▼▼
             const scoringPlayers = players.filter(player => player.id !== readerId);
-            const compactPlayerList = players.length >= 5;
+            const compactPlayerList = scoringPlayers.length >= 5;
+            const compactEditList = compactPlayerList && isScoreEditMode;
+            const densePlayerList = scoringPlayers.length >= 11;
             let nameSize = 'text-2xl';
             let scoreSize = 'text-4xl';
             
@@ -1004,10 +1168,12 @@
             } else {
                 nameSize = 'text-xl'; scoreSize = 'text-3xl'; 
             }
-            if (compactPlayerList) {
-                nameSize = 'text-lg';
-                scoreSize = 'text-4xl';
-                ui.playerList.className = 'flex-1 grid grid-cols-2 content-start gap-2 overflow-y-auto pr-1';
+            if (compactEditList) {
+                ui.playerList.className = 'flex-1 flex flex-col gap-2 overflow-y-auto pr-1';
+            } else if (compactPlayerList) {
+                nameSize = densePlayerList ? 'text-base' : 'text-sm';
+                scoreSize = densePlayerList ? 'text-2xl' : 'text-3xl';
+                ui.playerList.className = 'flex-1 grid grid-cols-2 gap-2 overflow-y-auto pr-1';
             } else {
                 ui.playerList.className = 'flex-1 flex flex-col gap-3 overflow-y-auto pr-1';
             }
@@ -1021,8 +1187,8 @@
                 let statusIcon = '';
                 
                 // リーチ状態判定
-                const isReach = (p.correct === winCondition - 1) && (winCondition > 1) && (p.status === 'active');
-                const isDanger = (p.incorrect === loseCondition - 1) && (loseCondition > 1) && (p.status === 'active');
+                const isReach = (getPlayerScore(p) === winCondition - 1) && (winCondition > 1) && (p.status === 'active');
+                const isDanger = scoreRule === 'marks-eliminate' && loseCondition > 1 && p.incorrect === loseCondition - 1 && p.status === 'active';
 
                 if (p.status === 'win') {
                     statusClass = 'bg-amber-900/50 border-2 border-amber-500 text-amber-200';
@@ -1030,6 +1196,9 @@
                 } else if (p.status === 'lose') {
                     statusClass = 'bg-rose-900/50 border-2 border-rose-500 text-rose-200 opacity-50';
                     statusIcon = '💀 ';
+                } else if (p.restQuestionsRemaining > 0) {
+                    statusClass = 'bg-slate-700/80 text-slate-400';
+                    statusIcon = '休 ';
                 } else if (isReach) {
                     statusClass = 'bg-emerald-950/80 text-white effect-reach'; // リーチ点滅
                 } else if (isDanger) {
@@ -1047,7 +1216,11 @@
                     orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
 
-                const playerRowSize = compactPlayerList ? 'p-2 rounded-md min-h-[80px]' : 'p-2 rounded-lg min-h-[60px]';
+                const playerRowSize = compactEditList
+                    ? 'p-1.5 rounded-md min-h-[54px]'
+                    : (compactPlayerList
+                        ? (densePlayerList ? 'p-1.5 rounded-md min-h-[60px]' : 'p-2 rounded-md min-h-[80px]')
+                        : 'p-2 rounded-lg min-h-[60px]');
                 div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass}`;
                 const isWaitingForPlayerKey = waitingForPlayerKeyId === p.id;
                 const assignedKeyLabel = getDisplayKey(p.key).toUpperCase();
@@ -1067,31 +1240,40 @@
                     // 編集モードUI
                     const editNameSize = compactPlayerList ? 'text-base' : 'text-xl';
                     const editControlSize = compactPlayerList ? 'px-1' : 'px-2';
+                    const scoreEditControls = scoreRule === 'ny'
+                        ? `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="-1">-</button>
+                            <span class="text-cyan-200 min-w-12 text-center font-bold">${getPlayerScore(p)}点</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="1">+</button>
+                        </div>`
+                        : `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
+                            <span class="text-emerald-400 w-10 text-center font-bold">〇${p.correct}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
+                            <span class="text-rose-400 w-10 text-center font-bold">✖${p.incorrect}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
+                        </div>`;
                     div.innerHTML = `
                         <div class="self-stretch flex min-w-0 flex-1 mr-2">
                             ${playerNameButton(editNameSize)}
                         </div>
-                        <div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
-                            <span class="text-emerald-400 w-10 text-center font-bold">〇${p.correct}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
-                            
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
-                            <span class="text-rose-400 w-10 text-center font-bold">✖${p.incorrect}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
-                        </div>
+                        ${scoreEditControls}
                     `;
                 } else {
                     // 通常表示UI (可変サイズ適用)
-                    const scoreGap = compactPlayerList ? 'gap-1.5' : 'gap-6';
+                    const scoreGap = compactPlayerList ? (densePlayerList ? 'gap-1' : 'gap-1.5') : 'gap-6';
+                    const scoreDisplay = scoreRule === 'ny'
+                        ? `<div class="flex font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${getPlayerScore(p)}点</span></div>`
+                        : `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
+                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${p.correct}</span>
+                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${p.incorrect}</span>
+                        </div>`;
                     div.innerHTML = `
                         <div class="self-stretch flex min-w-0 flex-1 mr-2">
                             ${playerNameButton(nameSize)}
                         </div>
-                        <div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${p.correct}</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${p.incorrect}</span>
-                        </div>
+                        ${scoreDisplay}
                     `;
                 }
                 const playerNameElement = div.querySelector('.player-name-text');
@@ -1130,16 +1312,36 @@
         });
 
         function setMode(m) {
-            if (!LiliceQuizRules.answerModes.some(rule => rule.id === m)) return;
+            if (!LiliceQuizRules.answerModes.some(rule => rule.id === m) || mode === m) return;
+            saveState();
             mode = m;
             applyStateToUI();
-            resetBuzzer();
+            resetBuzzer(false, false);
             saveAppState(); // 変更を保存
+        }
+
+        function setScoreRule(ruleId) {
+            if (!LiliceQuizRules.scoreRules.some(rule => rule.id === ruleId) || scoreRule === ruleId) return;
+            saveState();
+            scoreRule = ruleId;
+            players.forEach(player => {
+                player.restQuestionsRemaining = 0;
+                player.restQuestionsPending = 0;
+                updatePlayerStatus(player);
+            });
+            applyStateToUI();
+            updateDisplay();
+            saveAppState();
         }
 
         ui.answerModeOptions.addEventListener('click', event => {
             const button = event.target.closest('[data-answer-mode]');
             if (button) setMode(button.dataset.answerMode);
+        });
+
+        ui.scoreRuleOptions.addEventListener('click', event => {
+            const button = event.target.closest('[data-score-rule]');
+            if (button) setScoreRule(button.dataset.scoreRule);
         });
 
         ui.lightweightModeInput.addEventListener('change', event => {
@@ -1149,15 +1351,56 @@
         });
 
         ui.winScoreInput.addEventListener('change', (e) => {
-            winCondition = parseInt(e.target.value) || 3;
+            const nextWinCondition = clampInteger(e.target.value, 1, 99, 3);
+            if (nextWinCondition === winCondition) {
+                e.target.value = winCondition;
+                return;
+            }
+            saveState();
+            winCondition = nextWinCondition;
             e.target.value = winCondition;
+            players.forEach(updatePlayerStatus);
             applyStateToUI();
             updateDisplay();
             saveAppState();
         });
         ui.loseScoreInput.addEventListener('change', (e) => {
-            loseCondition = parseInt(e.target.value) || 2;
+            const nextLoseCondition = clampInteger(e.target.value, 0, 99, 2);
+            if (nextLoseCondition === loseCondition) {
+                e.target.value = loseCondition;
+                return;
+            }
+            saveState();
+            loseCondition = nextLoseCondition;
             e.target.value = loseCondition;
+            players.forEach(updatePlayerStatus);
+            applyStateToUI();
+            updateDisplay();
+            saveAppState();
+        });
+        ui.restQuestionsInput.addEventListener('change', event => {
+            const nextRestQuestions = clampInteger(event.currentTarget.value, 0, 99, 1);
+            if (nextRestQuestions === restQuestions) {
+                event.currentTarget.value = restQuestions;
+                return;
+            }
+            saveState();
+            restQuestions = nextRestQuestions;
+            event.currentTarget.value = restQuestions;
+            applyStateToUI();
+            updateDisplay();
+            saveAppState();
+        });
+        ui.nyDisqualificationInput.addEventListener('change', event => {
+            const nextNyDisqualification = clampInteger(event.currentTarget.value, 0, 99, 0);
+            if (nextNyDisqualification === nyDisqualification) {
+                event.currentTarget.value = nyDisqualification;
+                return;
+            }
+            saveState();
+            nyDisqualification = nextNyDisqualification;
+            event.currentTarget.value = nyDisqualification;
+            players.forEach(updatePlayerStatus);
             applyStateToUI();
             updateDisplay();
             saveAppState();
@@ -1240,13 +1483,15 @@
         const systemKeyLabels = {
             correct: '正解 (〇)',
             incorrect: '不正解 (✖)',
-            reset: 'リセット'
+            reset: 'リセット',
+            skip: 'スルー'
         };
 
         function updateButtonLabels() {
             document.getElementById('label-correct-key').textContent = `正解 (${getDisplayKey(systemKeys.correct).toUpperCase()})`;
             document.getElementById('label-incorrect-key').textContent = `不正解 (${getDisplayKey(systemKeys.incorrect).toUpperCase()})`;
             document.getElementById('label-reset-key').textContent = `リセット (${getDisplayKey(systemKeys.reset).toUpperCase()})`;
+            document.getElementById('label-skip-key').textContent = `スルー (${getDisplayKey(systemKeys.skip).toUpperCase()})`;
         }
 
         function renderSettingsModal() {
@@ -1331,6 +1576,7 @@
                 readerId = players[0]?.id || '';
             }
             renderAnswerModeOptions();
+            renderScoreRuleOptions();
             applyStateToUI();  // UIに反映
             updateDisplay();
             updateButtonLabels();
