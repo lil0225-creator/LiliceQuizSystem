@@ -132,7 +132,6 @@
             <div class="mb-4">
                 <label for="rule-preset" class="mb-2 block text-xs font-bold text-slate-300">クイズルールプリセット</label>
                 <select id="rule-preset" class="w-full rounded-md border border-cyan-700 bg-slate-900 px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-cyan-300"></select>
-                <p id="rule-preset-description" class="mt-2 text-xs text-slate-400">現在の設定を個別に組み合わせています。</p>
             </div>
 
             <div id="duel-player-fields" class="mb-4 hidden grid-cols-2 gap-3">
@@ -333,19 +332,19 @@
                     <section class="md:col-span-2">
                         <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">ルール</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm leading-relaxed text-slate-200">
-                            <div><strong class="text-white">N〇N休</strong><p class="mt-1">勝ち抜けは設定〇数。1✕で設定したN問休み、終了後に復帰します。N=0で休みなし。</p></div>
-                            <div><strong class="text-white">N〇N✕</strong><p class="mt-1">設定〇数で勝ち抜け、設定✕数で失格。✕数=0で失格なし。</p></div>
-                            <div><strong class="text-white">NYルール</strong><p class="mt-1">〇で+1点、✕で-1点。設定ポイントで勝ち抜け、設定したマイナス点で失格。失格点=0で無効。</p></div>
+                            <div><strong class="text-white">N〇N休</strong><p class="mt-1">正解数を競います。誤答すると設定した問題数を休み、その後に復帰します。</p></div>
+                            <div><strong class="text-white">N〇N✕</strong><p class="mt-1">正解数と誤答数を記録します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
+                            <div><strong class="text-white">NYルール</strong><p class="mt-1">正解で加点、誤答で減点します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
                         </div>
                     </section>
                     <section class="md:col-span-2">
                         <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">追加ルール</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed text-slate-200">
-                            <div><strong class="text-white">Up/Down</strong><p class="mt-1">正解で+1点。最初の誤答で現在点が0に戻ります。失格は設定した誤答数で判定し、0なら失格なし。7 Up/Downは失格なし、10 Up/Downは2誤答で失格。</p></div>
-                            <div><strong class="text-white">Freeze10</strong><p class="mt-1">10〇で勝ち抜け。1回目の誤答で1問、2回目で2問のように、誤答回数分休みます。</p></div>
-                            <div><strong class="text-white">Swedish10</strong><p class="mt-1">誤答時に累計×が増加。正解数0で+1、1〜2で+2、3〜5で+3、6以上で+4。累計10×で失格。</p></div>
-                            <div><strong class="text-white">10by10</strong><p class="mt-1">α=正解数、β=10−誤答数。表示されるα×βの積が100以上で勝ち抜け、6誤答で失格。</p></div>
-                            <div class="sm:col-span-2"><strong class="text-white">対決ルール（2人限定）</strong><p class="mt-1">早押し正解で本人+2点。誤答で相手+1点となります。問題文を最後まで読んだ後、相手が自分のキーで早押しして回答権を取ります。相手が正解すればさらに+1点、誤答なら追加点なし。相手が押さない場合はスルーキーで問題を終了できます。先に15点に達した側が勝利。</p></div>
+                            <div><strong class="text-white">Up/Down</strong><p class="mt-1">正解で加点します。最初の誤答で得点がリセットされます。</p></div>
+                            <div><strong class="text-white">Freeze10</strong><p class="mt-1">誤答回数に応じて、休む問題数が増えます。</p></div>
+                            <div><strong class="text-white">Swedish10</strong><p class="mt-1">誤答時のペナルティは、その時点の正解数に応じて増えます。</p></div>
+                            <div><strong class="text-white">10by10</strong><p class="mt-1">正解数と、誤答で減る係数の積を得点として競います。</p></div>
+                            <div class="sm:col-span-2"><strong class="text-white">対決ルール（2人限定）</strong><p class="mt-1">早押しで正解すると本人に、誤答すると相手に加点されます。問題文を読み切った後、相手が自分のキーで解答権を取れます。相手が押さない場合はスルーキーで問題を終了できます。</p></div>
                         </div>
                     </section>
                     <section class="md:col-span-2">
@@ -403,6 +402,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js?v=20260929-manual"></script>
 </body>
 </html>
