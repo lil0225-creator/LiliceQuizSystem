@@ -243,7 +243,16 @@ import { LiliceQuizRules } from './rules.js';
                 }
             }
             const playersNormalized = ensurePlayerKeys();
-            if (soundVolumesMigrated || playersNormalized) saveAppState();
+            // 再読み込みで進行中の問題は破棄されるため、誤答後の休みを次の問題へ引き継ぐ
+            let pendingRestRecovered = false;
+            players.forEach(player => {
+                if (player.restQuestionsPending > 0) {
+                    player.restQuestionsRemaining = Math.max(player.restQuestionsRemaining, player.restQuestionsPending);
+                    player.restQuestionsPending = 0;
+                    pendingRestRecovered = true;
+                }
+            });
+            if (soundVolumesMigrated || playersNormalized || pendingRestRecovered) saveAppState();
         }
 
         function renderHistory() {
@@ -1006,11 +1015,11 @@ import { LiliceQuizRules } from './rules.js';
                 const player = findEligiblePlayerByKey(e.key.toLowerCase());
                 const modeRule = LiliceQuizRules.getAnswerMode(mode);
                 const queueHasRoom = modeRule.queueLimit === null || queue.length < modeRule.queueLimit;
-                if (player && !buzzOrder.includes(player.id)) {
+                if (player && queueHasRoom && !buzzOrder.includes(player.id)) {
                     e.preventDefault();
                     saveState();
                     buzzOrder.push(player.id);
-                    if (queueHasRoom) queue.push(player.id);
+                    queue.push(player.id);
                     updateDisplay();
                 }
             }
