@@ -147,7 +147,7 @@ import { LiliceQuizRules } from './rules.js';
             if (!badge) {
                 badge = document.createElement('span');
                 badge.id = `badge-${type}`;
-                badge.className = 'ml-2 text-xs font-bold px-2 py-1 rounded bg-emerald-900/80 text-emerald-300 border border-emerald-500 whitespace-nowrap shrink-0';
+                badge.className = 'ml-2 text-xs font-bold px-2 py-1 rounded bg-emerald-100 text-emerald-700 border border-emerald-400 whitespace-nowrap shrink-0';
                 badge.textContent = '✅ 保存済';
                 input.parentNode.appendChild(badge);
             }
@@ -260,7 +260,7 @@ import { LiliceQuizRules } from './rules.js';
             container.replaceChildren();
             if (matchHistory.length === 0) {
                 const emptyMessage = document.createElement('p');
-                emptyMessage.className = 'text-slate-400 text-center py-8';
+                emptyMessage.className = 'text-gray-600 text-center py-8';
                 emptyMessage.textContent = 'まだ戦歴がありません。';
                 container.appendChild(emptyMessage);
                 return;
@@ -289,17 +289,17 @@ import { LiliceQuizRules } from './rules.js';
 
             const appendRecord = (containerElement, record) => {
                 const row = document.createElement('div');
-                row.className = 'flex justify-between items-center bg-slate-700/60 rounded p-3';
+                row.className = 'flex justify-between items-center bg-gray-100 rounded p-3';
                 const name = document.createElement('span');
-                name.className = 'font-bold text-white truncate mr-4';
+                name.className = 'font-bold text-gray-900 truncate mr-4';
                 name.textContent = record.name;
                 const scores = document.createElement('span');
                 scores.className = 'flex flex-wrap items-center justify-end gap-x-3 font-Lilice text-lg whitespace-nowrap';
                 const correct = document.createElement('span');
-                correct.className = 'text-emerald-400';
+                correct.className = 'text-emerald-700';
                 correct.textContent = `〇${record.correct}`;
                 const incorrect = document.createElement('span');
-                incorrect.className = 'text-rose-400 ml-4';
+                incorrect.className = 'text-rose-700 ml-4';
                 incorrect.textContent = record.scoreRule === 'swedish10' && Number.isFinite(record.swedishPenaltyMarks)
                     ? `×${record.swedishPenaltyMarks}`
                     : `✖${record.incorrect}`;
@@ -312,23 +312,23 @@ import { LiliceQuizRules } from './rules.js';
                     correct.textContent = `${record.score}点`;
                 }
                 const wins = document.createElement('span');
-                wins.className = 'font-sans text-xs text-amber-300';
+                wins.className = 'font-sans text-xs text-amber-700';
                 wins.textContent = Number.isFinite(record.wins) ? `WIN ${record.wins}` : 'WIN —';
                 scores.append(correct, incorrect, wins);
                 row.append(name, scores);
                 containerElement.appendChild(row);
             };
 
-            const totalsSection = createSection('累計', 'text-amber-300');
+            const totalsSection = createSection('累計', 'text-amber-700');
             totals.forEach(record => appendRecord(totalsSection.rows, record));
             container.appendChild(totalsSection.section);
 
-            const detailsSection = createSection('セット別戦歴', 'text-cyan-300');
+            const detailsSection = createSection('セット別戦歴', 'text-gray-700');
             detailsSection.rows.className = 'space-y-4';
             [...matchHistory].reverse().forEach((match, index) => {
                 const matchSection = document.createElement('section');
                 const heading = document.createElement('h4');
-                heading.className = 'text-cyan-300 font-bold mb-2';
+                heading.className = 'text-gray-700 font-bold mb-2';
                 const scoreRuleLabel = LiliceQuizRules.scoreRules.find(rule => rule.id === match.scoreRule)?.label;
                 const answerModeLabel = LiliceQuizRules.getAnswerMode(match.mode).label;
                 const ruleSummary = match.scoreRule === 'suitei-duel'
@@ -400,8 +400,8 @@ import { LiliceQuizRules } from './rules.js';
             ui.rulePresetSelect.value = matchingPreset;
             ui.lightweightModeInput.checked = lightweightMode;
             document.body.classList.toggle('lightweight-mode', lightweightMode);
-            const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
-            const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+            const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-gray-800 text-white border border-gray-400 ';
+            const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-white text-gray-600 border border-gray-200 hover:text-gray-900';
             ui.answerModeOptions.querySelectorAll('[data-answer-mode]').forEach(button => {
                 button.className = button.dataset.answerMode === mode ? modeActiveClass : modeInactiveClass;
             });
@@ -417,7 +417,7 @@ import { LiliceQuizRules } from './rules.js';
         }
 
         function renderAnswerModeOptions() {
-            const inactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+            const inactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-white text-gray-600 border border-gray-200 hover:text-gray-900';
             const buttons = LiliceQuizRules.answerModes.filter(rule => rule.id !== 'duel').map(rule => {
                 const button = document.createElement('button');
                 button.type = 'button';
@@ -434,7 +434,7 @@ import { LiliceQuizRules } from './rules.js';
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.dataset.scoreRule = rule.id;
-                button.className = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
+                button.className = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-white text-gray-600 border border-gray-200 hover:text-gray-900';
                 button.textContent = rule.label;
                 return button;
             });
@@ -1054,7 +1054,7 @@ import { LiliceQuizRules } from './rules.js';
                         const currentPlayer = players.find(player => player.id === pid);
                         if (currentPlayer?.status !== 'win') return;
                         playSound('win');
-                        showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-400');
+                        showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-700');
                     }, 500);
                 }
                 resetBuzzer(false);
@@ -1073,7 +1073,7 @@ import { LiliceQuizRules } from './rules.js';
                     const currentPlayer = players.find(player => player.id === pid);
                     if (currentPlayer?.status !== 'win') return;
                     playSound('win');
-                    showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-400');
+                    showResultOverlay(currentPlayer.name, 'WINNER!', 'text-amber-700');
                 }, 500);
             } else if (getPlayerScore(p) === winCondition - 1 && winCondition > 1) {
                 // リーチに到達した瞬間
@@ -1114,7 +1114,7 @@ import { LiliceQuizRules } from './rules.js';
                     duelOpponentChanceFor = '';
                     if (opponent.status === 'win') {
                         playSound('win');
-                        setTimeout(() => showResultOverlay(opponent.name, 'WINNER!', 'text-amber-400'), 300);
+                        setTimeout(() => showResultOverlay(opponent.name, 'WINNER!', 'text-amber-700'), 300);
                     }
                     resetBuzzer(false);
                 } else if (isOpponentResponse) {
@@ -1141,7 +1141,7 @@ import { LiliceQuizRules } from './rules.js';
                     const currentPlayer = players.find(player => player.id === pid);
                     if (currentPlayer?.status !== 'lose') return;
                     playSound('lose');
-                    showResultOverlay(currentPlayer.name, 'DISQUALIFIED', 'text-rose-500');
+                    showResultOverlay(currentPlayer.name, 'DISQUALIFIED', 'text-rose-700');
                 }, 500);
             } else if (scoreRule === 'marks-eliminate' && loseCondition > 1 && p.incorrect === loseCondition - 1) {
                 showCutin('DANGER!', 'danger');
@@ -1333,7 +1333,7 @@ import { LiliceQuizRules } from './rules.js';
             container.innerHTML = '';
             const noReaderButton = document.createElement('button');
             const hasNoReader = readerId === '';
-            noReaderButton.className = `px-3 py-2 rounded border border-dashed text-sm font-bold transition ${hasNoReader ? 'border-amber-300 bg-amber-950/50 text-amber-200' : 'border-slate-600 bg-slate-900/60 text-slate-400 hover:border-slate-400 hover:text-slate-200'}`;
+            noReaderButton.className = `px-3 py-2 rounded border border-dashed text-sm font-bold transition ${hasNoReader ? 'border-amber-200 bg-amber-100 text-amber-800' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300 hover:text-gray-800'}`;
             noReaderButton.textContent = 'なし';
             noReaderButton.title = '問読みなしに設定';
             noReaderButton.setAttribute('aria-pressed', String(hasNoReader));
@@ -1341,7 +1341,7 @@ import { LiliceQuizRules } from './rules.js';
             container.appendChild(noReaderButton);
 
             const divider = document.createElement('span');
-            divider.className = 'mx-1 self-stretch border-l border-slate-700';
+            divider.className = 'mx-1 self-stretch border-l border-gray-200';
             divider.setAttribute('aria-hidden', 'true');
             container.appendChild(divider);
 
@@ -1349,8 +1349,8 @@ import { LiliceQuizRules } from './rules.js';
                 const button = document.createElement('button');
                 button.className = 'player-name-content reader-name-button inline-flex items-center justify-center px-4 py-2 rounded border-2 text-sm font-bold transition';
                 const isReader = player.id === readerId;
-                button.classList.add(isReader ? 'border-amber-300' : 'border-transparent');
-                button.classList.add('bg-slate-800');
+                button.classList.add(isReader ? 'border-amber-200' : 'border-transparent');
+                button.classList.add('bg-white');
                 renderPlayerName(button, player.name);
                 button.title = '問読み担当に設定';
                 button.addEventListener('click', () => selectReader(player.id));
@@ -1367,11 +1367,11 @@ import { LiliceQuizRules } from './rules.js';
             textEl.textContent = text;
             
             // typeによって色とテキストスタイルを変える
-            box.className = 'w-full backdrop-blur-sm border-y-8 py-4 md:py-8 flex items-center justify-center transform translate-x-full shadow-[0_0_50px_currentColor]';
+            box.className = 'w-full backdrop-blur-sm border-y-8 py-4 md:py-8 flex items-center justify-center transform translate-x-full ';
             if (type === 'reach') {
-                box.classList.add('bg-emerald-600/90', 'border-emerald-300', 'text-emerald-400');
+                box.classList.add('bg-emerald-100', 'border-emerald-200', 'text-emerald-700');
             } else if (type === 'danger') {
-                box.classList.add('bg-rose-700/90', 'border-rose-300', 'text-rose-500');
+                box.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-700');
             }
             
             container.classList.remove('hidden');
@@ -1480,7 +1480,7 @@ import { LiliceQuizRules } from './rules.js';
             ui.playerList.innerHTML = '';
             scoringPlayers.forEach(p => {
                 const div = document.createElement('div');
-                let statusClass = 'bg-slate-800 text-slate-300 border-2 border-transparent';
+                let statusClass = 'bg-white text-gray-800 border-2 border-transparent';
                 let statusIcon = '';
                 
                 // リーチ状態判定
@@ -1488,18 +1488,18 @@ import { LiliceQuizRules } from './rules.js';
                 const isDanger = scoreRule === 'marks-eliminate' && loseCondition > 1 && p.incorrect === loseCondition - 1 && p.status === 'active';
 
                 if (p.status === 'win') {
-                    statusClass = 'bg-amber-900/50 border-2 border-amber-500 text-amber-200';
+                    statusClass = 'bg-amber-100 border-2 border-amber-400 text-amber-800';
                     statusIcon = '🏆 ';
                 } else if (p.status === 'lose') {
-                    statusClass = 'bg-rose-900/50 border-2 border-rose-500 text-rose-200 opacity-50';
+                    statusClass = 'bg-rose-100 border-2 border-rose-400 text-rose-800 opacity-50';
                     statusIcon = '💀 ';
                 } else if (p.restQuestionsRemaining > 0) {
-                    statusClass = 'bg-slate-700/80 text-slate-400';
+                    statusClass = 'bg-gray-100 text-gray-600';
                     statusIcon = '';
                 } else if (isReach) {
-                    statusClass = 'bg-emerald-950/80 text-white effect-reach'; // リーチ点滅
+                    statusClass = 'bg-emerald-100 text-gray-900 effect-reach'; // リーチ点滅
                 } else if (isDanger) {
-                    statusClass = 'bg-rose-950/80 text-white effect-danger'; // 飛びリーチ点滅
+                    statusClass = 'bg-rose-100 text-gray-900 effect-danger'; // 飛びリーチ点滅
                 }
 
                 // 押下順バッジ生成
@@ -1513,7 +1513,7 @@ import { LiliceQuizRules } from './rules.js';
                         ? 'th'
                         : ({ 1: 'st', 2: 'nd', 3: 'rd' }[position % 10] || 'th');
                     const orderStr = `${position}${suffix}`;
-                    const badgeClass = isFirst ? 'bg-cyan-500 text-slate-900 shadow-[0_0_10px_#06b6d4]' : 'bg-slate-600 text-white border border-slate-500';
+                    const badgeClass = isFirst ? 'bg-gray-800 text-white ' : 'bg-gray-200 text-gray-900 border border-gray-300';
                     const badgeSize = compactPlayerList ? 'ml-1 px-1.5 py-0.5 text-xs' : 'ml-3 px-3 py-1 text-lg';
                     orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
@@ -1527,12 +1527,12 @@ import { LiliceQuizRules } from './rules.js';
                         ? (densePlayerList ? 'p-1.5 rounded-md min-h-[60px]' : 'p-2 rounded-md min-h-[80px]')
                         : 'p-2 rounded-lg min-h-[60px]');
                 const isResting = p.restQuestionsRemaining > 0;
-                div.className = `relative ${playerRowSize} flex justify-between items-center shadow-lg transition-all flex-1 ${statusClass} ${isResting ? 'player-resting-lock' : ''}`;
+                div.className = `relative ${playerRowSize} flex justify-between items-center shadow-none transition-all flex-1 ${statusClass} ${isResting ? 'player-resting-lock' : ''}`;
                 const isWaitingForPlayerKey = waitingForPlayerKeyId === p.id;
                 const assignedKeyLabel = getDisplayKey(p.key).toUpperCase();
                 const assignedKeyWatermark = getPlayerKeyWatermark(p.key);
                 const playerNameButton = (fontSize) => `
-                    <button type="button" class="player-name-key-target h-full w-full min-w-0 flex flex-col items-center justify-center rounded-md px-2 py-1 text-center transition-colors ${isWaitingForPlayerKey ? 'bg-cyan-950/40 ring-2 ring-cyan-300' : 'hover:bg-cyan-900/20'}" data-id="${p.id}" title="${isWaitingForPlayerKey ? 'Escでキャンセル' : '名前をクリックしてキーを割り当て'}">
+                    <button type="button" class="player-name-key-target h-full w-full min-w-0 flex flex-col items-center justify-center rounded-md px-2 py-1 text-center transition-colors ${isWaitingForPlayerKey ? 'bg-gray-100 ring-2 ring-gray-400' : 'hover:bg-gray-100'}" data-id="${p.id}" title="${isWaitingForPlayerKey ? 'Escでキャンセル' : '名前をクリックしてキーを割り当て'}">
                         <span class="player-name-watermark-row ${fontSize} font-bold flex min-w-0 w-full items-center justify-start gap-1.5 text-left leading-tight">
                             <span class="player-status-icon">${statusIcon.trim()}</span>
                             <span class="player-name-text player-name-left min-w-0"></span>
@@ -1552,26 +1552,26 @@ import { LiliceQuizRules } from './rules.js';
                     const scorePresentation = LiliceQuizRules.getScorePresentation(p, scoreRule, { tenByTenBase: 10 });
                     const scoreEditControls = scorePresentation.type === 'points'
                         ? `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="-1">-</button>
-                            <span class="text-cyan-200 min-w-12 text-center font-bold">${getPlayerScore(p)}${scoreRule === 'suitei-duel' ? '点' : '点'}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="points" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="points" data-val="-1">-</button>
+                            <span class="text-gray-700 min-w-12 text-center font-bold">${getPlayerScore(p)}${scoreRule === 'suitei-duel' ? '点' : '点'}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="points" data-val="1">+</button>
                         </div>`
                         : scorePresentation.type === 'penalty-marks'
                         ? `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
-                            <span class="text-emerald-400 min-w-10 text-center font-bold">〇${scorePresentation.correct}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1" data-id="${p.id}" data-type="correct" data-val="1">+</button>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="penalty-marks" data-val="-1">-</button>
-                            <span class="text-rose-400 min-w-10 text-center font-bold">×${scorePresentation.penaltyMarks}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="penalty-marks" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
+                            <span class="text-emerald-700 min-w-10 text-center font-bold">〇${scorePresentation.correct}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900 mr-1" data-id="${p.id}" data-type="correct" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="penalty-marks" data-val="-1">-</button>
+                            <span class="text-rose-700 min-w-10 text-center font-bold">×${scorePresentation.penaltyMarks}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="penalty-marks" data-val="1">+</button>
                         </div>`
                         : `<div class="flex gap-1 font-Lilice text-lg shrink-0 items-center">
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
-                            <span class="text-emerald-400 w-10 text-center font-bold">〇${p.correct}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
-                            <span class="text-rose-400 w-10 text-center font-bold">✖${p.incorrect}</span>
-                            <button class="btn-score-edit ${editControlSize} py-1 bg-slate-700 hover:bg-slate-600 rounded text-white" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="-1">-</button>
+                            <span class="text-emerald-700 w-10 text-center font-bold">〇${p.correct}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900 mr-1 active:scale-90 transition" data-id="${p.id}" data-type="correct" data-val="1">+</button>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900 active:scale-90 transition" data-id="${p.id}" data-type="incorrect" data-val="-1">-</button>
+                            <span class="text-rose-700 w-10 text-center font-bold">✖${p.incorrect}</span>
+                            <button class="btn-score-edit ${editControlSize} py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-900" data-id="${p.id}" data-type="incorrect" data-val="1">+</button>
                         </div>`;
                     div.innerHTML = `
                         <div class="self-stretch flex min-w-0 flex-1 mr-2">
@@ -1585,21 +1585,21 @@ import { LiliceQuizRules } from './rules.js';
                     const scorePresentation = LiliceQuizRules.getScorePresentation(p, scoreRule, { tenByTenBase: 10 });
                     let scoreDisplay;
                     if (scoreRule === 'suitei-duel') {
-                        scoreDisplay = `<div class="flex flex-col items-end font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${p.duelPoints || 0}点</span></div>`;
+                        scoreDisplay = `<div class="flex flex-col items-end font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-gray-700"><span>${p.duelPoints || 0}点</span></div>`;
                     } else if (scorePresentation.type === 'points') {
-                        scoreDisplay = `<div class="flex font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-cyan-200"><span>${scorePresentation.value}点</span></div>`;
+                        scoreDisplay = `<div class="flex font-Lilice ${scoreSize} font-bold tracking-wider shrink-0 text-gray-700"><span>${scorePresentation.value}点</span></div>`;
                     } else if (scorePresentation.type === 'product') {
                         const productSize = densePlayerList ? 'text-xl' : 'text-2xl';
-                        scoreDisplay = `<div class="flex font-Lilice ${productSize} font-bold tracking-wider shrink-0 text-cyan-200" aria-label="${scorePresentation.alpha}かける${scorePresentation.beta}、積${scorePresentation.value}"><span>${scorePresentation.alpha}×${scorePresentation.beta}=${scorePresentation.value}</span></div>`;
+                        scoreDisplay = `<div class="flex font-Lilice ${productSize} font-bold tracking-wider shrink-0 text-gray-700" aria-label="${scorePresentation.alpha}かける${scorePresentation.beta}、積${scorePresentation.value}"><span>${scorePresentation.alpha}×${scorePresentation.beta}=${scorePresentation.value}</span></div>`;
                     } else if (scorePresentation.type === 'penalty-marks') {
                         scoreDisplay = `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${scorePresentation.correct}</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">×${scorePresentation.penaltyMarks}</span>
+                            <span class="text-emerald-700 ">〇${scorePresentation.correct}</span>
+                            <span class="text-rose-700 ">×${scorePresentation.penaltyMarks}</span>
                         </div>`;
                     } else {
                         scoreDisplay = `<div class="flex ${scoreGap} font-Lilice ${scoreSize} font-bold tracking-wider shrink-0">
-                            <span class="text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]">〇${scorePresentation.correct}</span>
-                            <span class="text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]">✖${scorePresentation.incorrect}</span>
+                            <span class="text-emerald-700 ">〇${scorePresentation.correct}</span>
+                            <span class="text-rose-700 ">✖${scorePresentation.incorrect}</span>
                         </div>`;
                     }
                     div.innerHTML = `
@@ -1623,7 +1623,7 @@ import { LiliceQuizRules } from './rules.js';
 
         function showResultOverlay(name, title, colorClass) {
             ui.resultTitle.textContent = title;
-            ui.resultTitle.className = `text-8xl font-Lilice font-bold mb-4 tracking-widest ${colorClass} drop-shadow-[0_0_20px_currentColor]`;
+            ui.resultTitle.className = `text-8xl font-Lilice font-bold mb-4 tracking-widest ${colorClass} `;
             ui.resultName.textContent = name;
             ui.resultOverlay.classList.remove('hidden');
         }
@@ -1633,12 +1633,12 @@ import { LiliceQuizRules } from './rules.js';
             ui.btnToggleEditScore.blur();
             isScoreEditMode = !isScoreEditMode;
             if (isScoreEditMode) {
-                ui.btnToggleEditScore.classList.replace('bg-slate-700', 'bg-cyan-600');
-                ui.btnToggleEditScore.classList.add('ring-2', 'ring-cyan-300');
+                ui.btnToggleEditScore.classList.replace('bg-gray-100', 'bg-gray-800');
+                ui.btnToggleEditScore.classList.add('ring-2', 'ring-gray-400');
                 ui.btnToggleEditScore.textContent = '✅ 完了';
             } else {
-                ui.btnToggleEditScore.classList.replace('bg-cyan-600', 'bg-slate-700');
-                ui.btnToggleEditScore.classList.remove('ring-2', 'ring-cyan-300');
+                ui.btnToggleEditScore.classList.replace('bg-gray-800', 'bg-gray-100');
+                ui.btnToggleEditScore.classList.remove('ring-2', 'ring-gray-400');
                 ui.btnToggleEditScore.textContent = '✏️ 編集';
             }
             updateDisplay();
@@ -1969,8 +1969,8 @@ import { LiliceQuizRules } from './rules.js';
                 const displayKey = getDisplayKey(currentKey);
                 
                 div.innerHTML = `
-                    <label class="text-xs text-amber-400 block mb-1">${label}</label>
-                    <button class="btn-assign-syskey w-full bg-slate-800 border ${waitingForSystemKey === keyType ? 'border-amber-400 text-amber-300 animate-pulse' : 'border-slate-500 text-white'} hover:border-amber-300 rounded px-2 py-2 text-center outline-none font-Lilice font-bold uppercase transition shadow-inner" data-keytype="${keyType}">
+                    <label class="text-xs text-amber-700 block mb-1">${label}</label>
+                    <button class="btn-assign-syskey w-full bg-white border ${waitingForSystemKey === keyType ? 'border-amber-400 text-amber-700 animate-pulse' : 'border-gray-300 text-gray-900'} hover:border-amber-200 rounded px-2 py-2 text-center outline-none font-Lilice font-bold uppercase transition shadow-none" data-keytype="${keyType}">
                         ${waitingForSystemKey === keyType ? '入力待ち...' : (displayKey || '未設定')}
                     </button>
                 `;
@@ -1981,16 +1981,16 @@ import { LiliceQuizRules } from './rules.js';
             ui.playerInputsContainer.innerHTML = '';
             editingPlayers.forEach((player, index) => {
                 const div = document.createElement('div');
-                div.className = 'player-row flex gap-4 items-center mb-3 bg-slate-700/50 p-2 rounded transition';
+                div.className = 'player-row flex gap-4 items-center mb-3 bg-gray-100 p-2 rounded transition';
                 div.dataset.id = player.id;
                 
                 div.innerHTML = `
                     <div class="flex-1">
-                        <label class="text-xs text-slate-400 block mb-1">名前</label>
-                        <input type="text" class="player-name-input w-full bg-slate-800 border border-slate-500 rounded px-2 py-1 text-white outline-none focus:border-cyan-400" data-index="${index}">
+                        <label class="text-xs text-gray-600 block mb-1">名前</label>
+                        <input type="text" class="player-name-input w-full bg-white border border-gray-300 rounded px-2 py-1 text-gray-900 outline-none focus:border-gray-400" data-index="${index}">
                     </div>
                     <div class="w-16 flex items-end justify-center pb-1">
-                        <button class="btn-remove-player text-rose-400 hover:text-rose-300 p-1 bg-slate-800 rounded border border-rose-900/50 hover:bg-rose-900/30 transition" data-index="${index}">
+                        <button class="btn-remove-player text-rose-700 hover:text-rose-700 p-1 bg-white rounded border border-rose-200 hover:bg-rose-100 transition" data-index="${index}">
                             削除
                         </button>
                     </div>
