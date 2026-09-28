@@ -895,6 +895,13 @@ import { LiliceQuizRules } from './rules.js';
                 }
                 return;
             }
+
+            // ルール編集や入力欄への文字入力を早押し操作として扱わない
+            if (!ui.ruleSettingsModal.classList.contains('hidden')) {
+                if (e.key === 'Escape') ui.ruleSettingsModal.classList.add('hidden');
+                return;
+            }
+            if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
             
             // --- 設定モーダルが開いていて、キー入力待ちの時 ---
             if (!ui.settingsModal.classList.contains('hidden')) {
@@ -1153,9 +1160,10 @@ import { LiliceQuizRules } from './rules.js';
 
         ui.btnReset.addEventListener('click', () => {
             // 早押しがされていた場合のみ履歴に残す
-            const hasQuestionInProgress = queue.length > 0;
+            const hasQuestionInProgress = queue.length > 0 || buzzOrder.length > 0 || Boolean(duelOpponentChanceFor);
             if (hasQuestionInProgress) saveState();
             resetBuzzer(false, hasQuestionInProgress);
+            saveAppState();
         });
 
         ui.btnSkip.addEventListener('click', () => {
@@ -1869,7 +1877,7 @@ import { LiliceQuizRules } from './rules.js';
                 const nameInput = row.querySelector('.player-name-input');
                 const idx = parseInt(nameInput.dataset.index);
                 const p = editingPlayers[idx];
-                if (!p.key) p.key = String(idx % 4 + 1);
+                if (!p.key) p.key = '';
                 
                 if (!p.name || p.name.trim() === '') {
                     hasError = true;
@@ -1887,7 +1895,9 @@ import { LiliceQuizRules } from './rules.js';
                 return;
             }
 
+            saveState();
             players = newPlayers;
+            ensurePlayerKeys();
             duelPlayerIds = duelPlayerIds.filter(playerId => newPlayers.some(player => player.id === playerId));
             systemKeys = { ...editingSystemKeys };
             if (readerId && !newPlayers.some(player => player.id === readerId)) {
