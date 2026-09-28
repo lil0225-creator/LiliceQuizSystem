@@ -1231,7 +1231,8 @@ import { LiliceQuizRules } from './rules.js';
             
             showMessage('すべてのスコアをゼロに戻して、新しい試合を始めますか？', () => {
                 saveState(); // 状態保存
-                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0 || player.duelPoints > 0);
+                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0
+                    || player.duelPoints > 0 || player.upDownScore > 0 || player.swedishPenaltyMarks > 0);
                 if (hasScore) {
                     matchHistory.push({
                         date: new Date().toLocaleString('ja-JP'),
@@ -1243,7 +1244,7 @@ import { LiliceQuizRules } from './rules.js';
                         nyDisqualification,
                         tenByTenBase: 10,
                         duelPlayerIds: [...duelPlayerIds],
-                        players: players.map(player => ({
+                        players: getScoringPlayers().map(player => ({
                             id: player.id,
                             name: player.name,
                             correct: player.correct,
