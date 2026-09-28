@@ -243,7 +243,16 @@ import { LiliceQuizRules } from './rules.js';
                 }
             }
             const playersNormalized = ensurePlayerKeys();
-            if (soundVolumesMigrated || playersNormalized) saveAppState();
+            // 再読み込みで進行中の問題は破棄されるため、誤答後の休みを次の問題へ引き継ぐ
+            let pendingRestRecovered = false;
+            players.forEach(player => {
+                if (player.restQuestionsPending > 0) {
+                    player.restQuestionsRemaining = Math.max(player.restQuestionsRemaining, player.restQuestionsPending);
+                    player.restQuestionsPending = 0;
+                    pendingRestRecovered = true;
+                }
+            });
+            if (soundVolumesMigrated || playersNormalized || pendingRestRecovered) saveAppState();
         }
 
         function renderHistory() {
@@ -352,6 +361,9 @@ import { LiliceQuizRules } from './rules.js';
             const isFreezeRule = scoreRule === 'freeze';
             const isSwedishRule = scoreRule === 'swedish10';
             const isDuelRule = scoreRule === 'suitei-duel';
+            ui.winScoreInput.disabled = isDuelRule;
+            ui.winScoreInput.title = isDuelRule ? '対決ルールは15点固定' : '';
+            document.getElementById('win-condition-title').textContent = isDuelRule ? '勝ち抜け（15点固定）' : '勝ち抜け';
             const isPointRule = isNYRule || scoreRule === 'up-down';
             const isTenByTenRule = scoreRule === 'ten-by-ten';
             const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
@@ -895,6 +907,13 @@ import { LiliceQuizRules } from './rules.js';
                 }
                 return;
             }
+
+            // ルール編集や入力欄への文字入力を早押し操作として扱わない
+            if (!ui.ruleSettingsModal.classList.contains('hidden')) {
+                if (e.key === 'Escape') ui.ruleSettingsModal.classList.add('hidden');
+                return;
+            }
+            if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
             
             // --- 設定モーダルが開いていて、キー入力待ちの時 ---
             if (!ui.settingsModal.classList.contains('hidden')) {
@@ -996,11 +1015,11 @@ import { LiliceQuizRules } from './rules.js';
                 const player = findEligiblePlayerByKey(e.key.toLowerCase());
                 const modeRule = LiliceQuizRules.getAnswerMode(mode);
                 const queueHasRoom = modeRule.queueLimit === null || queue.length < modeRule.queueLimit;
-                if (player && !buzzOrder.includes(player.id)) {
+                if (player && queueHasRoom && !buzzOrder.includes(player.id)) {
                     e.preventDefault();
                     saveState();
                     buzzOrder.push(player.id);
-                    if (queueHasRoom) queue.push(player.id);
+                    queue.push(player.id);
                     updateDisplay();
                 }
             }
@@ -1153,9 +1172,10 @@ import { LiliceQuizRules } from './rules.js';
 
         ui.btnReset.addEventListener('click', () => {
             // 早押しがされていた場合のみ履歴に残す
-            const hasQuestionInProgress = queue.length > 0;
+            const hasQuestionInProgress = queue.length > 0 || buzzOrder.length > 0 || Boolean(duelOpponentChanceFor);
             if (hasQuestionInProgress) saveState();
             resetBuzzer(false, hasQuestionInProgress);
+            saveAppState();
         });
 
         ui.btnSkip.addEventListener('click', () => {
@@ -1211,7 +1231,8 @@ import { LiliceQuizRules } from './rules.js';
             
             showMessage('すべてのスコアをゼロに戻して、新しい試合を始めますか？', () => {
                 saveState(); // 状態保存
-                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0 || player.duelPoints > 0);
+                const hasScore = players.some(player => player.correct > 0 || player.incorrect > 0
+                    || player.duelPoints > 0 || player.upDownScore > 0 || player.swedishPenaltyMarks > 0);
                 if (hasScore) {
                     matchHistory.push({
                         date: new Date().toLocaleString('ja-JP'),
@@ -1223,7 +1244,7 @@ import { LiliceQuizRules } from './rules.js';
                         nyDisqualification,
                         tenByTenBase: 10,
                         duelPlayerIds: [...duelPlayerIds],
-                        players: players.map(player => ({
+                        players: getScoringPlayers().map(player => ({
                             id: player.id,
                             name: player.name,
                             correct: player.correct,
@@ -1377,7 +1398,11 @@ import { LiliceQuizRules } from './rules.js';
                 const waitingForDuelOpponent = scoreRule === 'suitei-duel'
                     && Boolean(duelOpponentChanceFor)
                     && queue.length === 0;
-                ui.statusDisplay.textContent = waitingForDuelOpponent ? 'QUESTION CONTINUES...' : 'WAITING...';
+                const noOneLeft = queue.length > 0 && !getScoringPlayers().some(player =>
+                    player.status === 'active' && player.restQuestionsRemaining === 0 && !queue.includes(player.id));
+                ui.statusDisplay.textContent = waitingForDuelOpponent
+                    ? 'QUESTION CONTINUES...'
+                    : (noOneLeft ? 'NO ONE LEFT... (PRESS RESET)' : 'WAITING...');
                 ui.statusDisplay.classList.remove('hidden');
                 ui.currentAnswerer.classList.add('hidden');
                 ui.currentAnswerer.classList.remove('animate-flash');
@@ -1771,6 +1796,10 @@ import { LiliceQuizRules } from './rules.js';
         });
 
         ui.winScoreInput.addEventListener('change', (e) => {
+            if (scoreRule === 'suitei-duel') {
+                e.target.value = LiliceQuizRules.getDuelTarget();
+                return;
+            }
             const nextWinCondition = clampInteger(e.target.value, 1, 999, 3);
             if (nextWinCondition === winCondition) {
                 e.target.value = winCondition;
@@ -1869,7 +1898,7 @@ import { LiliceQuizRules } from './rules.js';
                 const nameInput = row.querySelector('.player-name-input');
                 const idx = parseInt(nameInput.dataset.index);
                 const p = editingPlayers[idx];
-                if (!p.key) p.key = String(idx % 4 + 1);
+                if (!p.key) p.key = '';
                 
                 if (!p.name || p.name.trim() === '') {
                     hasError = true;
@@ -1887,7 +1916,9 @@ import { LiliceQuizRules } from './rules.js';
                 return;
             }
 
+            saveState();
             players = newPlayers;
+            ensurePlayerKeys();
             duelPlayerIds = duelPlayerIds.filter(playerId => newPlayers.some(player => player.id === playerId));
             systemKeys = { ...editingSystemKeys };
             if (readerId && !newPlayers.some(player => player.id === readerId)) {
