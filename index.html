@@ -156,9 +156,9 @@
 
             <div class="grid grid-cols-2 gap-3">
                 <label class="block rounded-lg border border-emerald-300 bg-emerald-800 p-4">
-                    <span class="mb-2 block text-sm font-bold text-emerald-50">勝ち抜け</span>
+                    <span id="win-condition-title" class="mb-2 block text-sm font-bold text-emerald-50">勝ち抜け</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="win-condition" value="3" min="1" max="999" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-emerald-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-emerald-200">
+                        <input type="number" id="win-condition" value="3" min="1" max="999" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-emerald-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60">
                         <span id="win-condition-unit" class="text-sm font-bold text-emerald-50 whitespace-nowrap">マル</span>
                     </span>
                 </label>
@@ -341,11 +341,11 @@
                     <section class="md:col-span-2">
                         <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">追加ルール</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed text-slate-200">
-                            <div><strong class="text-white">Up/Down</strong><p class="mt-1">正解で+1点。最初の誤答で現在点が0に戻り、2回誤答で失格。</p></div>
+                            <div><strong class="text-white">Up/Down</strong><p class="mt-1">正解で+1点。最初の誤答で現在点が0に戻ります。失格は設定した誤答数で判定し、0なら失格なし。7 Up/Downは失格なし、10 Up/Downは2誤答で失格。</p></div>
                             <div><strong class="text-white">Freeze10</strong><p class="mt-1">10〇で勝ち抜け。1回目の誤答で1問、2回目で2問のように、誤答回数分休みます。</p></div>
                             <div><strong class="text-white">Swedish10</strong><p class="mt-1">誤答時に累計×が増加。正解数0で+1、1〜2で+2、3〜5で+3、6以上で+4。累計10×で失格。</p></div>
-                            <div><strong class="text-white">10by10</strong><p class="mt-1">α=正解数、β=10−誤答数。表示されるα×βの積が100で勝ち抜け、6誤答で失格。</p></div>
-                            <div class="sm:col-span-2"><strong class="text-white">対決ルール（2人限定）</strong><p class="mt-1">早押し正解で本人+2点。誤答で相手+1点となります。問題文を最後まで読んだ後、相手が自分のキーで早押しして回答権を取ります。相手が正解すればさらに+1点、誤答なら追加点なし。相手が押さない場合はスルーキーで問題を終了できます。設定した勝ち抜け点に先に達した側が勝利。</p></div>
+                            <div><strong class="text-white">10by10</strong><p class="mt-1">α=正解数、β=10−誤答数。表示されるα×βの積が100以上で勝ち抜け、6誤答で失格。</p></div>
+                            <div class="sm:col-span-2"><strong class="text-white">対決ルール（2人限定）</strong><p class="mt-1">早押し正解で本人+2点。誤答で相手+1点となります。問題文を最後まで読んだ後、相手が自分のキーで早押しして回答権を取ります。相手が正解すればさらに+1点、誤答なら追加点なし。相手が押さない場合はスルーキーで問題を終了できます。先に15点に達した側が勝利。</p></div>
                         </div>
                     </section>
                     <section class="md:col-span-2">
