@@ -352,6 +352,9 @@ import { LiliceQuizRules } from './rules.js';
             const isFreezeRule = scoreRule === 'freeze';
             const isSwedishRule = scoreRule === 'swedish10';
             const isDuelRule = scoreRule === 'suitei-duel';
+            ui.winScoreInput.disabled = isDuelRule;
+            ui.winScoreInput.title = isDuelRule ? '対決ルールは15点固定' : '';
+            document.getElementById('win-condition-title').textContent = isDuelRule ? '勝ち抜け（15点固定）' : '勝ち抜け';
             const isPointRule = isNYRule || scoreRule === 'up-down';
             const isTenByTenRule = scoreRule === 'ten-by-ten';
             const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
@@ -1385,7 +1388,11 @@ import { LiliceQuizRules } from './rules.js';
                 const waitingForDuelOpponent = scoreRule === 'suitei-duel'
                     && Boolean(duelOpponentChanceFor)
                     && queue.length === 0;
-                ui.statusDisplay.textContent = waitingForDuelOpponent ? 'QUESTION CONTINUES...' : 'WAITING...';
+                const noOneLeft = queue.length > 0 && !getScoringPlayers().some(player =>
+                    player.status === 'active' && player.restQuestionsRemaining === 0 && !queue.includes(player.id));
+                ui.statusDisplay.textContent = waitingForDuelOpponent
+                    ? 'QUESTION CONTINUES...'
+                    : (noOneLeft ? 'NO ONE LEFT... (PRESS RESET)' : 'WAITING...');
                 ui.statusDisplay.classList.remove('hidden');
                 ui.currentAnswerer.classList.add('hidden');
                 ui.currentAnswerer.classList.remove('animate-flash');
@@ -1779,6 +1786,10 @@ import { LiliceQuizRules } from './rules.js';
         });
 
         ui.winScoreInput.addEventListener('change', (e) => {
+            if (scoreRule === 'suitei-duel') {
+                e.target.value = LiliceQuizRules.getDuelTarget();
+                return;
+            }
             const nextWinCondition = clampInteger(e.target.value, 1, 999, 3);
             if (nextWinCondition === winCondition) {
                 e.target.value = winCondition;
