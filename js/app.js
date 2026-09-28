@@ -398,8 +398,6 @@ import { LiliceQuizRules } from './rules.js';
             document.getElementById('lose-condition-title').textContent = isSwedishRule ? '失格（累計×数）' : '失格（誤答数）';
             document.getElementById('lose-condition-unit').textContent = isSwedishRule ? '×（0で無効）' : 'バツ（0で無効）';
             ui.rulePresetSelect.value = matchingPreset;
-            ui.rulePresetDescription.textContent = LiliceQuizRules.getRulePreset(matchingPreset)?.description
-                || '現在の設定を個別に組み合わせています。';
             ui.lightweightModeInput.checked = lightweightMode;
             document.body.classList.toggle('lightweight-mode', lightweightMode);
             const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 shadow-[0_0_12px_rgba(6,182,212,0.18)]';
@@ -825,7 +823,6 @@ import { LiliceQuizRules } from './rules.js';
             answerModeOptions: document.getElementById('answer-mode-options'),
             scoreRuleOptions: document.getElementById('score-rule-options'),
             rulePresetSelect: document.getElementById('rule-preset'),
-            rulePresetDescription: document.getElementById('rule-preset-description'),
             duelPlayerFields: document.getElementById('duel-player-fields'),
             duelPlayerA: document.getElementById('duel-player-a'),
             duelPlayerB: document.getElementById('duel-player-b'),
