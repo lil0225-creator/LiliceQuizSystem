@@ -50,7 +50,7 @@ export const rulePresets = Object.freeze([
     Object.freeze({
         id: '10by10',
         label: '10by10',
-        description: 'α=正解数、β=10−誤答数。α×βが100で勝ち抜け、6誤答で失格。',
+        description: 'α=正解数、β=10−誤答数。α×βが100以上で勝ち抜け、6誤答で失格。',
         scoreRule: 'ten-by-ten', answerMode: 'endless', winCondition: 100, loseCondition: 6, restQuestions: 0, nyDisqualification: 0
     }),
     Object.freeze({
