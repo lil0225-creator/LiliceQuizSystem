@@ -376,26 +376,6 @@
             animation: lightweight-cutin 0.4s ease-out forwards !important;
         }
 
-/* Theme choices keep the original palette as the default. */
-.theme-options label { cursor: pointer; min-width: 0; }
-.theme-choice {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 3.5rem;
-    padding: 0.4rem;
-    border: 2px solid #64748b;
-    border-radius: 0.5rem;
-    text-align: center;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-.theme-choice-classic { background: #172033; color: #e2e8f0; border-color: #38bdf8; }
-.theme-choice-muted { background: #252d3a; color: #e5e7eb; border-color: #768799; }
-.theme-choice-paper { background: #f3f4f5; color: #24272b; border-color: #cbd5e1; }
-.theme-options input:checked + .theme-choice { outline: 3px solid #67e8f9; outline-offset: 2px; }
-.theme-options input:focus-visible + .theme-choice { outline: 3px solid #fbbf24; outline-offset: 2px; }
-
 body[data-theme="muted"] {
     --color-page: #171d28;
     --color-panel: #252d3a;

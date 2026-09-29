@@ -94,8 +94,7 @@ import { LiliceQuizRules } from './rules.js';
 
         function applyScreenTheme() {
             document.body.dataset.theme = screenTheme;
-            const selected = document.querySelector(`input[name="screen-theme"][value="${screenTheme}"]`);
-            if (selected) selected.checked = true;
+            document.getElementById('screen-theme').value = screenTheme;
         }
 
         let queue = []; // 早押ししたプレイヤーのid配列
@@ -1801,11 +1800,9 @@ import { LiliceQuizRules } from './rules.js';
         });
 
         let themeBeforeSettings = screenTheme;
-        document.querySelectorAll('input[name="screen-theme"]').forEach(input => {
-            input.addEventListener('change', event => {
-                screenTheme = event.currentTarget.value;
-                applyScreenTheme();
-            });
+        document.getElementById('screen-theme').addEventListener('change', event => {
+            screenTheme = event.currentTarget.value;
+            applyScreenTheme();
         });
 
         ui.winScoreInput.addEventListener('change', (e) => {
