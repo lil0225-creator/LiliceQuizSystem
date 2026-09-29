@@ -1,14 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap');
 
         :root {
             --font-ui: 'Noto Sans JP', sans-serif;
-            --font-display: 'Noto Sans JP', sans-serif;
-            --color-page: #f3f4f5;
-            --color-text: #24272b;
-            --color-panel: #ffffff;
-            --color-panel-border: #d9dde2;
+            --font-display: 'Orbitron', sans-serif;
+            --color-page: #0f172a;
+            --color-text: #e2e8f0;
+            --color-panel: rgba(30, 41, 59, 0.7);
+            --color-panel-border: #385166;
         }
-        
+
         body {
             font-family: var(--font-ui);
             background-color: var(--color-page);
@@ -53,8 +53,8 @@
         }
 
         .player-name-key-target:hover {
-            background: #f3f4f6;
-            outline: 2px solid #4b5563;
+            background: rgba(8, 145, 178, 0.12);
+            outline: 2px solid #67e8f9;
             outline-offset: -2px;
         }
 
@@ -65,7 +65,7 @@
             left: 82%;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            color: rgba(55, 65, 81, 0.4);
+            color: rgba(226, 232, 240, 0.16);
             font-family: var(--font-display);
             font-size: 0.75rem;
             font-weight: 700;
@@ -80,7 +80,7 @@
             left: 82%;
             transform: translate(-50%, -50%);
             pointer-events: none;
-            color: rgba(55, 65, 81, 0.4);
+            color: rgba(226, 232, 240, 0.16);
             font-family: var(--font-display);
             font-size: 1.75rem;
             font-weight: 900;
@@ -138,7 +138,7 @@
             line-height: 1;
             vertical-align: middle;
         }
-        
+
         .Lilice-panel {
             background: var(--color-panel);
             border: 1px solid var(--color-panel-border);
@@ -168,7 +168,7 @@
             top: 50%;
             left: 52%;
             transform: translate(-50%, -50%) rotate(-12deg);
-            color: rgba(55, 65, 81, 0.12);
+            color: rgba(203, 213, 225, 0.12);
             font-family: var(--font-display);
             font-size: 1.25rem;
             font-weight: 900;
@@ -185,9 +185,9 @@
             flex: none;
             border: 1px solid rgba(148, 163, 184, 0.4);
             border-radius: 3px;
-            background: #e5e7eb;
+            background: rgba(15, 23, 42, 0.76);
             padding: 2px 5px;
-            color: #4b5563;
+            color: #cbd5e1;
             font-family: var(--font-ui);
             font-size: 0.625rem;
             font-weight: 700;
@@ -199,7 +199,7 @@
             display: block;
             flex: 0 0 100%;
             margin-top: 0.15em;
-            color: #4b5563;
+            color: #67e8f9;
             font-family: var(--font-display);
             font-size: 0.2em;
             font-weight: 700;
@@ -212,9 +212,8 @@
             backdrop-filter: none !important;
         }
 
-        body .Lilice-btn {
-            background: #30363d;
-            color: #ffffff;
+        .Lilice-btn {
+            background: linear-gradient(45deg, #0ea5e9, #3b82f6);
             border: none;
             position: relative;
             overflow: hidden;
@@ -223,12 +222,21 @@
         .Lilice-btn:active {
             transform: scale(0.95);
         }
-        .Lilice-btn:hover { background: #454d56; }
+        .Lilice-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        .Lilice-btn:hover::before {
+            left: 100%;
+        }
 
         /* 解答者表示のアニメーション */
         @keyframes flash-answer {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.75; }
+            0%, 100% { opacity: 1; text-shadow: 0 0 20px #38bdf8, 0 0 40px #38bdf8; }
+            50% { opacity: 0.8; text-shadow: 0 0 10px #38bdf8; }
         }
         .animate-flash {
             animation: flash-answer 0.5s infinite;
@@ -244,8 +252,17 @@
         .animate-cutin {
             animation: cutin-slide 2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
         }
-        .effect-reach { box-shadow: inset 4px 0 #047857; border-color: #6ee7b7; }
-        .effect-danger { box-shadow: inset 4px 0 #be123c; border-color: #fda4af; }
+        @keyframes pulse-reach {
+            0%, 100% { box-shadow: 0 0 6px rgba(52,211,153,0.12) inset, 0 0 6px rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.5); }
+            50% { box-shadow: 0 0 12px rgba(52,211,153,0.25) inset, 0 0 12px rgba(52,211,153,0.25); border-color: rgba(52,211,153,1); }
+        }
+        .effect-reach { animation: pulse-reach 1s infinite; }
+
+        @keyframes pulse-danger {
+            0%, 100% { box-shadow: 0 0 6px rgba(244,63,94,0.12) inset, 0 0 6px rgba(244,63,94,0.12); border-color: rgba(244,63,94,0.5); }
+            50% { box-shadow: 0 0 12px rgba(244,63,94,0.25) inset, 0 0 12px rgba(244,63,94,0.25); border-color: rgba(244,63,94,1); }
+        }
+        .effect-danger { animation: pulse-danger 1s infinite; }
 
         @media (max-width: 960px) {
             #current-answerer.player-name-content {
@@ -358,19 +375,3 @@
         body.lightweight-mode .animate-cutin {
             animation: lightweight-cutin 0.4s ease-out forwards !important;
         }
-
-        /* Light scoreboard: neutral surfaces, color reserved for game status. */
-        body { color-scheme: light; }
-        .font-Lilice { font-variant-numeric: tabular-nums; }
-        header h1 { color: #24272b; letter-spacing: 0.02em; }
-        #rule-summary h2, h2.font-Lilice { font-weight: 700; }
-        #btn-correct, #btn-incorrect, #btn-reset { border-width: 2px; }
-        #btn-skip { border-color: #d1d5db; background: #f9fafb; color: #4b5563; }
-        #btn-skip:hover { background: #f3f4f6; }
-        #rule-summary .border-2 { border-width: 1px; }
-        #result-overlay { background: rgba(255, 255, 255, 0.97); }
-        #btn-toggle-edit-score.bg-gray-800 { color: #ffffff; }
-        input[type="range"], input[type="checkbox"] { accent-color: #374151; }
-        :focus-visible { outline: 2px solid #475569; outline-offset: 3px; }
-
-        #player-list > .bg-white { background: #f8f9fa; border-color: #edf0f2; }

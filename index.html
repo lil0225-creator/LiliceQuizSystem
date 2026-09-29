@@ -5,29 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lilice QUIZ SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css?v=20260928-light">
+    <link rel="stylesheet" href="css/style.css?v=20260929-original">
 </head>
 <body class="h-screen w-screen flex flex-col p-4 relative">
 
     <!-- ヘッダー -->
     <header class="flex justify-between items-center mb-4 flex-shrink-0">
         <div>
-            <h1 class="text-3xl font-Lilice font-bold text-gray-700 tracking-wider ">Lilice QUIZ SYSTEM</h1>
+            <h1 class="text-3xl font-Lilice font-bold text-cyan-400 tracking-wider ">Lilice QUIZ SYSTEM</h1>
         </div>
         <div class="flex gap-4">
-            <button id="btn-manual" type="button" aria-label="マニュアル" title="マニュアル" class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-xl font-bold text-gray-700 transition hover:bg-gray-100">
+            <button id="btn-manual" type="button" aria-label="マニュアル" title="マニュアル" class="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-700 bg-slate-800 text-xl font-bold text-cyan-200 transition hover:bg-slate-700">
                 ？
             </button>
-            <button id="btn-undo" class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 rounded text-gray-800 transition text-sm font-bold opacity-50 cursor-not-allowed">
+            <button id="btn-undo" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 transition text-sm font-bold opacity-50 cursor-not-allowed">
                 ↩️ 戻す
             </button>
-            <button id="btn-reset-score" class="flex items-center gap-2 px-4 py-2 bg-rose-100 hover:bg-rose-50 border border-rose-400 rounded text-rose-700 transition text-sm font-bold ">
+            <button id="btn-reset-score" class="flex items-center gap-2 px-4 py-2 bg-rose-900/50 hover:bg-rose-800 border border-rose-500 rounded text-rose-300 transition text-sm font-bold ">
                 スコアリセット
             </button>
-            <button id="btn-history" class="px-3 py-2 bg-white hover:bg-gray-100 border border-gray-200 rounded text-gray-800 transition text-sm font-bold">
+            <button id="btn-history" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 transition text-sm font-bold">
                 戦歴
             </button>
-            <button id="btn-settings" class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 border border-gray-200 rounded text-gray-800 transition text-sm font-bold">
+            <button id="btn-settings" class="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded text-slate-300 transition text-sm font-bold">
                 設定
             </button>
         </div>
@@ -35,42 +35,42 @@
 
     <!-- メインコンテンツ -->
     <div class="flex flex-1 gap-4 min-h-0">
-        
+
         <!-- 左サイド：メイン判定エリア -->
         <div class="flex-1 flex flex-col gap-4 min-w-0">
             <section class="Lilice-panel rounded-xl px-4 py-3 flex items-center gap-4 flex-shrink-0">
-                <span class="text-xs text-amber-700 font-bold whitespace-nowrap">問読み</span>
+                <span class="text-xs text-amber-300 font-bold whitespace-nowrap">問読み</span>
                 <div id="reader-picker" class="flex gap-2 flex-wrap" aria-live="polite">
-                    <span class="self-center text-xs text-gray-500">読み込み中...</span>
+                    <span class="self-center text-xs text-slate-500">読み込み中...</span>
                 </div>
             </section>
 
             <!-- 解答者表示 -->
             <div class="Lilice-panel flex-1 rounded-xl flex flex-col justify-center items-center relative overflow-hidden">
-                <div class="absolute top-4 left-4 text-gray-700 font-Lilice text-sm">CURRENT ANSWERER</div>
-                
-                <div id="status-display" class="text-4xl text-gray-500 font-bold mb-4">WAITING...</div>
-                <div id="current-answerer" class="text-6xl md:text-8xl font-bold text-gray-700  hidden">
+                <div class="absolute top-4 left-4 text-cyan-500/50 font-Lilice text-sm">CURRENT ANSWERER</div>
+
+                <div id="status-display" class="text-4xl text-slate-500 font-bold mb-4">WAITING...</div>
+                <div id="current-answerer" class="text-6xl md:text-8xl font-bold text-cyan-100  hidden">
                     PLAYER 1
                 </div>
             </div>
 
             <!-- コントロールパネル -->
             <div class="h-40 Lilice-panel rounded-xl flex items-center justify-center gap-6 p-4">
-                <button id="btn-correct" class="w-32 h-32 rounded-full border-4 border-emerald-400 bg-emerald-100 hover:bg-emerald-100 flex flex-col items-center justify-center text-emerald-700 text-5xl transition ">
+                <button id="btn-correct" class="w-32 h-32 rounded-full border-4 border-emerald-500 bg-emerald-950 hover:bg-emerald-900 flex flex-col items-center justify-center text-emerald-400 text-5xl transition ">
                     <span>〇</span>
                     <span class="text-sm font-normal mt-1" id="label-correct-key">正解 (O)</span>
                 </button>
-                <button id="btn-incorrect" class="w-32 h-32 rounded-full border-4 border-rose-400 bg-rose-100 hover:bg-rose-100 flex flex-col items-center justify-center text-rose-700 text-5xl transition ">
+                <button id="btn-incorrect" class="w-32 h-32 rounded-full border-4 border-rose-500 bg-rose-950 hover:bg-rose-900 flex flex-col items-center justify-center text-rose-400 text-5xl transition ">
                     <span>✖</span>
                     <span class="text-sm font-normal mt-1" id="label-incorrect-key">不正解 (X)</span>
                 </button>
-                <div class="w-px h-24 bg-gray-100 mx-4"></div>
-                <button id="btn-reset" class="w-32 h-32 rounded-full border-4 border-gray-300 bg-white hover:bg-gray-100 flex flex-col items-center justify-center text-gray-800 text-3xl font-Lilice transition ">
+                <div class="w-px h-24 bg-slate-700 mx-4"></div>
+                <button id="btn-reset" class="w-32 h-32 rounded-full border-4 border-slate-400 bg-slate-800 hover:bg-slate-700 flex flex-col items-center justify-center text-slate-300 text-3xl font-Lilice transition ">
                     <span>RST</span>
                     <span class="text-xs font-sans mt-1" id="label-reset-key">リセット (SPACE)</span>
                 </button>
-                <button id="btn-skip" type="button" aria-label="この問題をスルー" title="この問題をスルー" class="w-24 h-24 rounded-full border-2 border-amber-400 bg-amber-100 hover:bg-amber-100 flex flex-col items-center justify-center text-amber-700 text-2xl font-bold transition">
+                <button id="btn-skip" type="button" aria-label="この問題をスルー" title="この問題をスルー" class="w-24 h-24 rounded-full border-2 border-amber-500 bg-amber-950 hover:bg-amber-900 flex flex-col items-center justify-center text-amber-300 text-2xl font-bold transition">
                     <span>PASS</span>
                     <span id="label-skip-key" class="text-xs font-sans mt-1">スルー (S)</span>
                 </button>
@@ -79,107 +79,107 @@
 
         <!-- 右サイド：情報パネル (幅とレイアウトを大幅に変更) -->
         <div class="w-[640px] flex flex-col gap-4">
-            
+
             <!-- ルール設定 -->
-            <section id="rule-summary" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="rule-settings-modal" aria-label="ルール設定を開く" class="Lilice-panel cursor-pointer rounded-xl p-4 flex-shrink-0 transition-colors hover:border-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400">
-                <div class="flex items-center justify-between mb-2 border-b border-gray-200 pb-1">
-                    <h2 class="font-Lilice text-gray-700 text-sm">RULES</h2>
+            <section id="rule-summary" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="rule-settings-modal" aria-label="ルール設定を開く" class="Lilice-panel cursor-pointer rounded-xl p-4 flex-shrink-0 transition-colors hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300">
+                <div class="flex items-center justify-between mb-2 border-b border-cyan-800/80 pb-1">
+                    <h2 class="font-Lilice text-cyan-400 text-sm">RULES</h2>
                     <div class="flex items-center gap-2">
-                        <span id="rule-summary-scoring-rule" class="text-[10px] text-gray-700">N〇N✕</span>
-                        <span class="text-[10px] text-gray-600">クリックで変更</span>
+                        <span id="rule-summary-scoring-rule" class="text-[10px] text-cyan-200">N〇N✕</span>
+                        <span class="text-[10px] text-slate-400">クリックで変更</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-[1fr_1.5fr_1.5fr] items-stretch gap-3 text-center">
-                    <div class="min-h-[104px] self-center rounded-lg border border-gray-400 bg-gray-100 px-2 py-1  flex flex-col items-center justify-center">
-                        <span class="block text-sm font-bold text-gray-700">モード</span>
-                        <span id="rule-summary-mode" class="mt-1.5 block text-lg font-bold text-gray-900">シングル</span>
+                    <div class="min-h-[104px] self-center rounded-lg border border-cyan-300/80 bg-cyan-900/70 px-2 py-1  flex flex-col items-center justify-center">
+                        <span class="block text-sm font-bold text-cyan-50">モード</span>
+                        <span id="rule-summary-mode" class="mt-1.5 block text-lg font-bold text-white">シングル</span>
                     </div>
-                    <div class="min-h-[104px] rounded-lg border-2 border-emerald-200 bg-emerald-50 px-3 py-2  flex flex-col justify-center">
-                        <span class="block text-base font-bold text-emerald-800">勝ち抜け</span>
-                        <span class="mt-0.5 block font-Lilice text-4xl font-bold text-gray-900"><span id="rule-summary-win">3</span><span id="rule-summary-win-unit" class="ml-1 text-xl font-sans">マル</span></span>
+                    <div class="min-h-[104px] rounded-lg border-2 border-emerald-300 bg-emerald-800 px-3 py-2  flex flex-col justify-center">
+                        <span class="block text-base font-bold text-emerald-50">勝ち抜け</span>
+                        <span class="mt-0.5 block font-Lilice text-4xl font-bold text-white"><span id="rule-summary-win">3</span><span id="rule-summary-win-unit" class="ml-1 text-xl font-sans">マル</span></span>
                     </div>
-                    <div id="rule-summary-lose-card" class="min-h-[104px] rounded-lg border-2 border-rose-200 bg-rose-50 px-3 py-2  flex flex-col justify-center">
-                        <span id="rule-summary-lose-label" class="block text-base font-bold text-rose-800">失格</span>
-                        <span class="mt-0.5 block font-Lilice text-4xl font-bold text-gray-900"><span id="rule-summary-lose">2</span><span id="rule-summary-lose-unit" class="ml-1 text-xl font-sans">バツ</span></span>
+                    <div id="rule-summary-lose-card" class="min-h-[104px] rounded-lg border-2 border-rose-300 bg-rose-800 px-3 py-2  flex flex-col justify-center">
+                        <span id="rule-summary-lose-label" class="block text-base font-bold text-rose-50">失格</span>
+                        <span class="mt-0.5 block font-Lilice text-4xl font-bold text-white"><span id="rule-summary-lose">2</span><span id="rule-summary-lose-unit" class="ml-1 text-xl font-sans">バツ</span></span>
                     </div>
                 </div>
             </section>
 
             <!-- プレイヤー一覧（スコア） - メインで大きく表示 -->
             <div class="Lilice-panel rounded-xl p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-                <div class="flex justify-between items-center mb-2 border-b border-gray-200 pb-1 flex-shrink-0">
+                <div class="flex justify-between items-center mb-2 border-b border-cyan-800 pb-1 flex-shrink-0">
                     <div class="min-w-0 flex items-baseline gap-3">
-                        <h2 class="font-Lilice text-gray-700 text-sm whitespace-nowrap">PLAYERS &amp; SCORE</h2>
-                        <p class="text-xs text-gray-600 whitespace-nowrap">名前をクリックしてキー設定</p>
+                        <h2 class="font-Lilice text-cyan-400 text-sm whitespace-nowrap">PLAYERS &amp; SCORE</h2>
+                        <p class="text-xs text-slate-400 whitespace-nowrap">名前をクリックしてキー設定</p>
                     </div>
-                    <button id="btn-toggle-edit-score" class="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs transition text-gray-900 border border-gray-300 outline-none">✏️ 編集</button>
+                    <button id="btn-toggle-edit-score" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs transition text-white border border-slate-500 outline-none">✏️ 編集</button>
                 </div>
                 <div id="player-list" class="flex-1 flex flex-col gap-3 overflow-y-auto pr-1" aria-live="polite">
-                    <p class="flex flex-1 items-center justify-center text-sm text-gray-500">プレイヤー情報を読み込み中...</p>
+                    <p class="flex flex-1 items-center justify-center text-sm text-slate-500">プレイヤー情報を読み込み中...</p>
                 </div>
             </div>
-            
+
         </div>
     </div>
 
     <div id="rule-settings-modal" class="fixed inset-0 bg-black/80 z-50 flex justify-center items-center hidden backdrop-blur-sm p-4">
-        <section class="w-full max-w-xl max-h-full overflow-y-auto rounded-xl border-2 border-gray-400 bg-white p-6 ">
-            <div class="mb-5 flex items-center justify-between border-b border-gray-200 pb-3">
-                <h2 class="font-Lilice text-xl font-bold text-gray-700">RULE SETTINGS <span class="font-sans text-base">/ ルール設定</span></h2>
-                <button id="btn-close-rule-settings" class="rounded border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm font-bold text-gray-900 hover:bg-gray-200" aria-label="ルール設定を閉じる">閉じる</button>
+        <section class="w-full max-w-xl max-h-full overflow-y-auto rounded-xl border-2 border-cyan-500 bg-slate-800 p-6 ">
+            <div class="mb-5 flex items-center justify-between border-b border-slate-600 pb-3">
+                <h2 class="font-Lilice text-xl font-bold text-cyan-300">RULE SETTINGS <span class="font-sans text-base">/ ルール設定</span></h2>
+                <button id="btn-close-rule-settings" class="rounded border border-slate-500 bg-slate-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-slate-600" aria-label="ルール設定を閉じる">閉じる</button>
             </div>
 
             <div class="mb-4">
-                <label for="rule-preset" class="mb-2 block text-xs font-bold text-gray-800">クイズルールプリセット</label>
-                <select id="rule-preset" class="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-gray-400"></select>
+                <label for="rule-preset" class="mb-2 block text-xs font-bold text-slate-300">クイズルールプリセット</label>
+                <select id="rule-preset" class="w-full rounded-md border border-cyan-700 bg-slate-900 px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-cyan-300"></select>
             </div>
 
             <div id="duel-player-fields" class="mb-4 hidden grid-cols-2 gap-3">
-                <label class="text-xs font-bold text-gray-800">対戦者A
-                    <select id="duel-player-a" class="mt-1 w-full rounded-md border border-emerald-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-emerald-200"></select>
+                <label class="text-xs font-bold text-slate-300">対戦者A
+                    <select id="duel-player-a" class="mt-1 w-full rounded-md border border-emerald-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-emerald-300"></select>
                 </label>
-                <label class="text-xs font-bold text-gray-800">対戦者B
-                    <select id="duel-player-b" class="mt-1 w-full rounded-md border border-rose-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-rose-200"></select>
+                <label class="text-xs font-bold text-slate-300">対戦者B
+                    <select id="duel-player-b" class="mt-1 w-full rounded-md border border-rose-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-rose-300"></select>
                 </label>
             </div>
 
             <div class="mb-5">
-                <span class="mb-2 block text-xs font-bold text-gray-800">得点方式</span>
-                <div id="score-rule-options" class="grid grid-cols-3 gap-2 rounded-lg bg-gray-50 p-1.5"></div>
+                <span class="mb-2 block text-xs font-bold text-slate-300">得点方式</span>
+                <div id="score-rule-options" class="grid grid-cols-3 gap-2 rounded-lg bg-slate-900 p-1.5"></div>
             </div>
 
             <div class="mb-5">
-                <span class="mb-2 block text-xs font-bold text-gray-800">解答チャンス</span>
-                <div id="answer-mode-options" class="grid grid-cols-3 gap-2 rounded-lg bg-gray-50 p-1.5"></div>
+                <span class="mb-2 block text-xs font-bold text-slate-300">解答チャンス</span>
+                <div id="answer-mode-options" class="grid grid-cols-3 gap-2 rounded-lg bg-slate-900 p-1.5"></div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-                <label class="block rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                    <span id="win-condition-title" class="mb-2 block text-sm font-bold text-emerald-800">勝ち抜け</span>
+                <label class="block rounded-lg border border-emerald-300 bg-emerald-800 p-4">
+                    <span id="win-condition-title" class="mb-2 block text-sm font-bold text-emerald-50">勝ち抜け</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="win-condition" value="3" min="1" max="999" class="w-full min-w-0 h-14 bg-white border-2 border-emerald-200 rounded-md text-center font-Lilice text-2xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60">
-                        <span id="win-condition-unit" class="text-sm font-bold text-emerald-800 whitespace-nowrap">マル</span>
+                        <input type="number" id="win-condition" value="3" min="1" max="999" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-emerald-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60">
+                        <span id="win-condition-unit" class="text-sm font-bold text-emerald-50 whitespace-nowrap">マル</span>
                     </span>
                 </label>
-                <label id="lose-condition-field" class="block rounded-lg border border-rose-200 bg-rose-50 p-4">
-                    <span id="lose-condition-title" class="mb-2 block text-sm font-bold text-rose-800">失格</span>
+                <label id="lose-condition-field" class="block rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span id="lose-condition-title" class="mb-2 block text-sm font-bold text-rose-50">失格</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="lose-condition" value="2" min="0" max="99" class="w-full min-w-0 h-14 bg-white border-2 border-rose-200 rounded-md text-center font-Lilice text-2xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-rose-200">
-                        <span id="lose-condition-unit" class="text-sm font-bold text-rose-800 whitespace-nowrap">バツ</span>
+                        <input type="number" id="lose-condition" value="2" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span id="lose-condition-unit" class="text-sm font-bold text-rose-50 whitespace-nowrap">バツ</span>
                     </span>
                 </label>
-                <label id="rest-questions-field" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-4">
-                    <span class="mb-2 block text-sm font-bold text-rose-800">N休</span>
+                <label id="rest-questions-field" class="hidden rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span class="mb-2 block text-sm font-bold text-rose-50">N休</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="rest-questions" value="1" min="0" max="99" class="w-full min-w-0 h-14 bg-white border-2 border-rose-200 rounded-md text-center font-Lilice text-2xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-rose-200">
-                        <span class="text-sm font-bold text-rose-800 whitespace-nowrap">問（0で無効）</span>
+                        <input type="number" id="rest-questions" value="1" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span class="text-sm font-bold text-rose-50 whitespace-nowrap">問（0で無効）</span>
                     </span>
                 </label>
-                <label id="ny-disqualification-field" class="hidden rounded-lg border border-rose-200 bg-rose-50 p-4">
-                    <span class="mb-2 block text-sm font-bold text-rose-800">失格（マイナス点）</span>
+                <label id="ny-disqualification-field" class="hidden rounded-lg border border-rose-300 bg-rose-800 p-4">
+                    <span class="mb-2 block text-sm font-bold text-rose-50">失格（マイナス点）</span>
                     <span class="flex items-center gap-2">
-                        <input type="number" id="ny-disqualification" value="0" min="0" max="99" class="w-full min-w-0 h-14 bg-white border-2 border-rose-200 rounded-md text-center font-Lilice text-2xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-rose-200">
-                        <span class="text-sm font-bold text-rose-800 whitespace-nowrap">点（0で無効）</span>
+                        <input type="number" id="ny-disqualification" value="0" min="0" max="99" class="w-full min-w-0 h-14 bg-slate-800 border-2 border-rose-300 rounded-md text-center font-Lilice text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-rose-200">
+                        <span class="text-sm font-bold text-rose-50 whitespace-nowrap">点（0で無効）</span>
                     </span>
                 </label>
             </div>
@@ -189,72 +189,72 @@
 
     <!-- プレイヤー設定モーダル -->
     <div id="settings-modal" class="fixed inset-0 bg-black/80 z-50 flex justify-center items-center hidden backdrop-blur-sm p-4">
-        <div class="bg-white border-2 border-gray-400 p-6 rounded-xl w-full max-w-3xl  flex flex-col max-h-full">
-            <h2 class="text-2xl font-Lilice text-gray-700 mb-2 border-b border-gray-200 pb-2 flex-shrink-0">SYSTEM SETTINGS</h2>
-            
+        <div class="bg-slate-800 border-2 border-cyan-500 p-6 rounded-xl w-full max-w-3xl  flex flex-col max-h-full">
+            <h2 class="text-2xl font-Lilice text-cyan-400 mb-2 border-b border-slate-600 pb-2 flex-shrink-0">SYSTEM SETTINGS</h2>
+
             <div class="overflow-y-auto flex-1 pr-2 space-y-6">
                 <!-- サウンド設定 -->
                 <section>
-                    <h3 class="text-lg font-Lilice text-emerald-700 mb-2 border-b border-gray-200 pb-1">SOUNDS (音声ファイル指定 &amp; 音量)</h3>
-                    <p class="text-xs text-gray-600 mb-3">お手持ちの音声ファイル(.mp3等)を選択し、音量を調整できます。</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-100 p-3 rounded" id="sound-inputs-container">
-                        <div class="flex flex-col gap-1 border-b border-gray-200 pb-2 md:border-b-0 md:pb-0">
+                    <h3 class="text-lg font-Lilice text-emerald-400 mb-2 border-b border-slate-700 pb-1">SOUNDS (音声ファイル指定 &amp; 音量)</h3>
+                    <p class="text-xs text-slate-400 mb-3">お手持ちの音声ファイル(.mp3等)を選択し、音量を調整できます。</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-700/30 p-3 rounded" id="sound-inputs-container">
+                        <div class="flex flex-col gap-1 border-b border-slate-600/50 pb-2 md:border-b-0 md:pb-0">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">早押し音</label>
-                                <input type="file" accept="audio/*" id="sound-buzzer" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">早押し音</label>
+                                <input type="file" accept="audio/*" id="sound-buzzer" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-buzzer" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
-                        <div class="flex flex-col gap-1 border-b border-gray-200 pb-2 md:border-b-0 md:pb-0">
+                        <div class="flex flex-col gap-1 border-b border-slate-600/50 pb-2 md:border-b-0 md:pb-0">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">正解音</label>
-                                <input type="file" accept="audio/*" id="sound-correct" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">正解音</label>
+                                <input type="file" accept="audio/*" id="sound-correct" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-correct" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
-                        <div class="flex flex-col gap-1 border-b border-gray-200 pb-2 md:border-b-0 md:pb-0">
+                        <div class="flex flex-col gap-1 border-b border-slate-600/50 pb-2 md:border-b-0 md:pb-0">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">不正解音</label>
-                                <input type="file" accept="audio/*" id="sound-incorrect" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">不正解音</label>
+                                <input type="file" accept="audio/*" id="sound-incorrect" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-incorrect" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
-                        <div class="flex flex-col gap-1 border-b border-gray-200 pb-2 md:border-b-0 md:pb-0">
+                        <div class="flex flex-col gap-1 border-b border-slate-600/50 pb-2 md:border-b-0 md:pb-0">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">勝利音</label>
-                                <input type="file" accept="audio/*" id="sound-win" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">勝利音</label>
+                                <input type="file" accept="audio/*" id="sound-win" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-win" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
                         <div class="flex flex-col gap-1">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">失格音</label>
-                                <input type="file" accept="audio/*" id="sound-lose" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">失格音</label>
+                                <input type="file" accept="audio/*" id="sound-lose" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-lose" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
                         <div class="flex flex-col gap-1">
                             <div class="flex items-center gap-2">
-                                <label class="w-20 text-sm text-emerald-700 font-bold">リーチ音</label>
-                                <input type="file" accept="audio/*" id="sound-reach" class="text-sm text-gray-800 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-50">
+                                <label class="w-20 text-sm text-emerald-400 font-bold">リーチ音</label>
+                                <input type="file" accept="audio/*" id="sound-reach" class="text-sm text-slate-300 w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-emerald-900/50 file:text-emerald-300 hover:file:bg-emerald-800/50">
                             </div>
                             <div class="flex items-center gap-2 pl-22">
-                                <span class="text-xs text-gray-500">音量</span>
+                                <span class="text-xs text-slate-500">音量</span>
                                 <input type="range" id="vol-reach" min="0" max="1" step="0.05" value="0.5" class="w-full accent-emerald-500 outline-none cursor-pointer">
                             </div>
                         </div>
@@ -262,26 +262,26 @@
                 </section>
 
                 <section>
-                    <h3 class="text-lg font-Lilice text-gray-700 mb-2 border-b border-gray-200 pb-1">DISPLAY</h3>
-                    <label for="lightweight-mode" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-100 p-3">
-                        <span class="text-sm font-bold text-gray-900">軽量モード</span>
+                    <h3 class="text-lg font-Lilice text-cyan-300 mb-2 border-b border-slate-700 pb-1">DISPLAY</h3>
+                    <label for="lightweight-mode" class="flex items-center justify-between gap-4 rounded-lg border border-slate-600 bg-slate-700/40 p-3">
+                        <span class="text-sm font-bold text-white">軽量モード</span>
                         <input id="lightweight-mode" type="checkbox" class="h-5 w-5 accent-cyan-500">
                     </label>
                 </section>
 
                 <!-- システムキー設定 -->
                 <section>
-                    <h3 class="text-lg font-Lilice text-amber-700 mb-2 border-b border-gray-200 pb-1">SYSTEM KEYS (システムキー割り当て)</h3>
-                    <div class="flex gap-4 bg-gray-100 p-3 rounded" id="system-keys-container">
+                    <h3 class="text-lg font-Lilice text-amber-400 mb-2 border-b border-slate-700 pb-1">SYSTEM KEYS (システムキー割り当て)</h3>
+                    <div class="flex gap-4 bg-slate-700/30 p-3 rounded" id="system-keys-container">
                         <!-- JSで生成 -->
                     </div>
                 </section>
 
                 <!-- プレイヤー設定 -->
                 <section>
-                    <div class="flex justify-between items-end mb-2 border-b border-gray-200 pb-1">
-                        <h3 class="text-lg font-Lilice text-gray-700">PLAYERS (プレイヤーキー割り当て)</h3>
-                        <button id="btn-add-player" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs transition text-gray-900 border border-gray-300">+ 追加</button>
+                    <div class="flex justify-between items-end mb-2 border-b border-slate-700 pb-1">
+                        <h3 class="text-lg font-Lilice text-cyan-400">PLAYERS (プレイヤーキー割り当て)</h3>
+                        <button id="btn-add-player" class="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs transition text-white border border-slate-500">+ 追加</button>
                     </div>
                     <div class="space-y-2" id="player-inputs-container">
                         <!-- Javascriptで入力欄が生成される -->
@@ -289,76 +289,76 @@
                 </section>
             </div>
 
-            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-200 flex-shrink-0">
-                <button id="btn-close-settings" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded font-bold transition text-gray-900 border border-gray-300">キャンセル</button>
-                <button id="btn-save-settings" class="px-6 py-2 Lilice-btn rounded font-bold text-gray-900 ">保存して閉じる</button>
+            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-600 flex-shrink-0">
+                <button id="btn-close-settings" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded font-bold transition text-white border border-slate-500">キャンセル</button>
+                <button id="btn-save-settings" class="px-6 py-2 Lilice-btn rounded font-bold text-white ">保存して閉じる</button>
             </div>
         </div>
     </div>
-    
+
     <div id="manual-modal" class="fixed inset-0 bg-black/80 z-50 flex justify-center items-center hidden backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-labelledby="manual-title">
-        <section class="w-full max-w-3xl max-h-[90vh] rounded-xl border-2 border-gray-400 bg-white p-5 md:p-6  flex flex-col">
-            <div class="mb-4 flex items-center justify-between border-b border-gray-200 pb-3">
-                <h2 id="manual-title" class="font-Lilice text-xl font-bold text-gray-700">HOW TO PLAY <span class="font-sans text-base">/ マニュアル</span></h2>
-                <button id="btn-close-manual" type="button" class="rounded border border-gray-300 bg-gray-100 px-3 py-1.5 text-sm font-bold text-gray-900 hover:bg-gray-200">閉じる</button>
+        <section class="w-full max-w-3xl max-h-[90vh] rounded-xl border-2 border-cyan-500 bg-slate-800 p-5 md:p-6  flex flex-col">
+            <div class="mb-4 flex items-center justify-between border-b border-slate-600 pb-3">
+                <h2 id="manual-title" class="font-Lilice text-xl font-bold text-cyan-300">HOW TO PLAY <span class="font-sans text-base">/ マニュアル</span></h2>
+                <button id="btn-close-manual" type="button" class="rounded border border-slate-500 bg-slate-700 px-3 py-1.5 text-sm font-bold text-white hover:bg-slate-600">閉じる</button>
             </div>
             <div class="overflow-y-auto pr-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                     <section>
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">基本操作</h3>
-                        <ul class="space-y-2 text-sm leading-relaxed text-gray-800">
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">基本操作</h3>
+                        <ul class="space-y-2 text-sm leading-relaxed text-slate-200">
                             <li>プレイヤーのキーを押して早押しします。名前をクリックするとキーを変更できます。</li>
-                            <li><strong class="text-emerald-700">正解ボタン</strong>で正解、<strong class="text-rose-700">不正解ボタン</strong>で誤答を記録します。</li>
-                            <li><strong class="text-gray-800">リセットボタン</strong>で進行中の問題をリセットします。</li>
-                            <li><strong class="text-amber-700">スルーボタン</strong>は正誤を付けずに問題を終了します。N休の休み問題数も進みます。</li>
+                            <li><strong class="text-emerald-300">正解ボタン</strong>で正解、<strong class="text-rose-300">不正解ボタン</strong>で誤答を記録します。</li>
+                            <li><strong class="text-slate-200">リセットボタン</strong>で進行中の問題をリセットします。</li>
+                            <li><strong class="text-amber-300">スルーボタン</strong>は正誤を付けずに問題を終了します。N休の休み問題数も進みます。</li>
                         </ul>
                     </section>
                     <section>
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">プレイヤーを追加</h3>
-                        <ol class="space-y-2 text-sm leading-relaxed text-gray-800">
-                            <li><span class="mr-1 font-Lilice font-bold text-gray-700">1.</span>右上の「設定」を開きます。</li>
-                            <li><span class="mr-1 font-Lilice font-bold text-gray-700">2.</span>「PLAYERS」の「+ 追加」を押して名前を入力します。</li>
-                            <li><span class="mr-1 font-Lilice font-bold text-gray-700">3.</span>「保存して閉じる」を押し、一覧の名前をクリックしてキーを割り当てます。</li>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">プレイヤーを追加</h3>
+                        <ol class="space-y-2 text-sm leading-relaxed text-slate-200">
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">1.</span>右上の「設定」を開きます。</li>
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">2.</span>「PLAYERS」の「+ 追加」を押して名前を入力します。</li>
+                            <li><span class="mr-1 font-Lilice font-bold text-cyan-300">3.</span>「保存して閉じる」を押し、一覧の名前をクリックしてキーを割り当てます。</li>
                         </ol>
                     </section>
                     <section>
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">解答チャンス</h3>
-                        <ul class="space-y-2 text-sm leading-relaxed text-gray-800">
-                            <li><strong class="text-gray-900">シングル</strong>：誤答でその問題を終了。</li>
-                            <li><strong class="text-gray-900">エンドレス</strong>：誤答後も次の解答者へ進みます。待機者がいなくなるとRST待ちになります。</li>
-                            <li><strong class="text-gray-900">2着切り</strong>：最大2人まで解答権を受け付けます。後続がいない時、または2人目が誤答すると終了。</li>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">解答チャンス</h3>
+                        <ul class="space-y-2 text-sm leading-relaxed text-slate-200">
+                            <li><strong class="text-white">シングル</strong>：誤答でその問題を終了。</li>
+                            <li><strong class="text-white">エンドレス</strong>：誤答後も次の解答者へ進みます。待機者がいなくなるとRST待ちになります。</li>
+                            <li><strong class="text-white">2着切り</strong>：最大2人まで解答権を受け付けます。後続がいない時、または2人目が誤答すると終了。</li>
                         </ul>
                     </section>
                     <section class="md:col-span-2">
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">ルール</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm leading-relaxed text-gray-800">
-                            <div><strong class="text-gray-900">N〇N休</strong><p class="mt-1">正解数を競います。誤答すると設定した問題数を休み、その後に復帰します。</p></div>
-                            <div><strong class="text-gray-900">N〇N✕</strong><p class="mt-1">正解数と誤答数を記録します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
-                            <div><strong class="text-gray-900">NYルール</strong><p class="mt-1">正解で加点、誤答で減点します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">ルール</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm leading-relaxed text-slate-200">
+                            <div><strong class="text-white">N〇N休</strong><p class="mt-1">正解数を競います。誤答すると設定した問題数を休み、その後に復帰します。</p></div>
+                            <div><strong class="text-white">N〇N✕</strong><p class="mt-1">正解数と誤答数を記録します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
+                            <div><strong class="text-white">NYルール</strong><p class="mt-1">正解で加点、誤答で減点します。勝ち抜け・失格の条件はルール設定で確認できます。</p></div>
                         </div>
                     </section>
                     <section class="md:col-span-2">
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">追加ルール</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed text-gray-800">
-                            <div><strong class="text-gray-900">Up/Down</strong><p class="mt-1">正解で加点します。最初の誤答で得点がリセットされます。</p></div>
-                            <div><strong class="text-gray-900">Freeze10</strong><p class="mt-1">誤答回数に応じて、休む問題数が増えます。</p></div>
-                            <div><strong class="text-gray-900">Swedish10</strong><p class="mt-1">誤答時のペナルティは、その時点の正解数に応じて増えます。</p></div>
-                            <div><strong class="text-gray-900">10by10</strong><p class="mt-1">正解数と、誤答で減る係数の積を得点として競います。</p></div>
-                            <div class="sm:col-span-2"><strong class="text-gray-900">対決ルール（2人限定）</strong><p class="mt-1">早押しで正解すると本人に、誤答すると相手に加点されます。問題文を読み切った後、相手が自分のキーで解答権を取れます。相手が押さない場合はスルーキーで問題を終了できます。</p></div>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">追加ルール</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm leading-relaxed text-slate-200">
+                            <div><strong class="text-white">Up/Down</strong><p class="mt-1">正解で加点します。最初の誤答で得点がリセットされます。</p></div>
+                            <div><strong class="text-white">Freeze10</strong><p class="mt-1">誤答回数に応じて、休む問題数が増えます。</p></div>
+                            <div><strong class="text-white">Swedish10</strong><p class="mt-1">誤答時のペナルティは、その時点の正解数に応じて増えます。</p></div>
+                            <div><strong class="text-white">10by10</strong><p class="mt-1">正解数と、誤答で減る係数の積を得点として競います。</p></div>
+                            <div class="sm:col-span-2"><strong class="text-white">対決ルール（2人限定）</strong><p class="mt-1">早押しで正解すると本人に、誤答すると相手に加点されます。問題文を読み切った後、相手が自分のキーで解答権を取れます。相手が押さない場合はスルーキーで問題を終了できます。</p></div>
                         </div>
                     </section>
                     <section class="md:col-span-2">
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">その他</h3>
-                        <p class="text-sm leading-relaxed text-gray-800">「戻す」は直前の操作をUndoします。スコア欄の「編集」では得点を手動修正できます。スコアリセットは全員の得点を0にして新しい試合を開始します。</p>
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">その他</h3>
+                        <p class="text-sm leading-relaxed text-slate-200">「戻す」は直前の操作をUndoします。スコア欄の「編集」では得点を手動修正できます。スコアリセットは全員の得点を0にして新しい試合を開始します。</p>
                     </section>
                     <section class="md:col-span-2">
-                        <h3 class="mb-2 border-b border-gray-200 pb-1 text-sm font-bold text-gray-700">お問い合わせ・要望</h3>
-                        <a href="https://x.com/LilIce20_VRC" target="_blank" rel="noopener noreferrer" aria-label="りるのX、@LilIce20_VRC" class="inline-flex items-center gap-2 text-sm font-bold text-gray-700 underline decoration-gray-200 underline-offset-4 hover:text-gray-700">
+                        <h3 class="mb-2 border-b border-cyan-800 pb-1 text-sm font-bold text-cyan-300">お問い合わせ・要望</h3>
+                        <a href="https://x.com/LilIce20_VRC" target="_blank" rel="noopener noreferrer" aria-label="りるのX、@LilIce20_VRC" class="inline-flex items-center gap-2 text-sm font-bold text-cyan-300 underline decoration-cyan-700 underline-offset-4 hover:text-cyan-100">
                             <span>りる</span>
                             <svg viewBox="0 0 24 24" class="h-4 w-4 fill-current" aria-hidden="true" focusable="false">
                                 <path d="M18.9 1.15h3.68l-8.04 9.19 9.45 13.46h-7.4l-5.8-8.21-6.63 8.21H.47l8.6-10.06L0 1.15h7.59l5.24 7.33zM17.61 21.28h2.04L6.47 3.29H4.28z" />
                             </svg>
-                            <span class="text-xs font-normal text-gray-600">@LilIce20_VRC</span>
+                            <span class="text-xs font-normal text-slate-400">@LilIce20_VRC</span>
                         </a>
                     </section>
                 </div>
@@ -368,18 +368,18 @@
 
     <!-- 決着オーバーレイ -->
     <div id="result-overlay" class="fixed inset-0 bg-black/90 z-40 flex flex-col justify-center items-center hidden backdrop-blur-md">
-        <div id="result-title" class="text-8xl font-Lilice font-bold mb-4 tracking-widest text-gray-900">WINNER!</div>
-        <div id="result-name" class="text-6xl text-gray-900 font-bold mb-12 ">PLAYER NAME</div>
+        <div id="result-title" class="text-8xl font-Lilice font-bold mb-4 tracking-widest text-white">WINNER!</div>
+        <div id="result-name" class="text-6xl text-white font-bold mb-12 ">PLAYER NAME</div>
         <button id="btn-close-result" class="Lilice-btn px-10 py-4 rounded-full text-2xl font-bold ">続ける (ESC)</button>
     </div>
 
     <div id="history-modal" class="fixed inset-0 bg-black/80 z-50 flex justify-center items-center hidden backdrop-blur-sm p-4">
-        <div class="bg-white border-2 border-gray-400 p-6 rounded-xl w-full max-w-3xl  flex flex-col max-h-full">
-            <h2 class="text-2xl font-Lilice text-gray-700 mb-4 border-b border-gray-200 pb-2">戦歴</h2>
+        <div class="bg-slate-800 border-2 border-cyan-500 p-6 rounded-xl w-full max-w-3xl  flex flex-col max-h-full">
+            <h2 class="text-2xl font-Lilice text-cyan-400 mb-4 border-b border-slate-600 pb-2">戦歴</h2>
             <div id="history-list" class="overflow-y-auto flex-1 space-y-3"></div>
-            <div class="flex justify-end mt-4 pt-4 border-t border-gray-200">
-                <button id="btn-clear-history" class="mr-auto px-4 py-2 bg-rose-100 hover:bg-rose-50 rounded font-bold text-rose-700 border border-rose-400">戦歴リセット</button>
-                <button id="btn-close-history" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded font-bold text-gray-900 border border-gray-300">閉じる</button>
+            <div class="flex justify-end mt-4 pt-4 border-t border-slate-600">
+                <button id="btn-clear-history" class="mr-auto px-4 py-2 bg-rose-900/50 hover:bg-rose-800 rounded font-bold text-rose-300 border border-rose-500">戦歴リセット</button>
+                <button id="btn-close-history" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded font-bold text-white border border-slate-500">閉じる</button>
             </div>
         </div>
     </div>
@@ -387,21 +387,21 @@
     <!-- リーチ/飛びリーチ カットイン -->
     <div id="cutin-container" class="fixed inset-0 pointer-events-none z-[60] flex items-center justify-center overflow-hidden hidden">
         <div id="cutin-box" class="w-full backdrop-blur-sm border-y-8 py-8 flex items-center justify-center transform translate-x-full ">
-            <span id="cutin-text" class="font-Lilice font-black text-gray-900 text-8xl md:text-[150px] tracking-widest italic ">REACH!</span>
+            <span id="cutin-text" class="font-Lilice font-black text-white text-8xl md:text-[150px] tracking-widest italic ">REACH!</span>
         </div>
     </div>
 
     <!-- カスタムメッセージボックス -->
     <div id="custom-msg-box" class="fixed inset-0 bg-black/80 z-[70] flex justify-center items-center hidden backdrop-blur-sm">
-        <div class="bg-white border-2 border-gray-400 p-6 rounded-xl max-w-md w-full shadow-sm text-center">
-            <p id="custom-msg-text" class="text-lg text-gray-900 mb-6"></p>
+        <div class="bg-slate-800 border-2 border-indigo-500 p-6 rounded-xl max-w-md w-full shadow-2xl text-center">
+            <p id="custom-msg-text" class="text-lg text-white mb-6"></p>
             <div class="flex justify-center gap-4">
-                <button id="custom-msg-cancel" class="px-6 py-2 bg-gray-100 hover:bg-gray-200 rounded font-bold text-gray-900 transition hidden">キャンセル</button>
-                <button id="custom-msg-ok" class="Lilice-btn px-6 py-2 rounded font-bold text-gray-900  bg-gray-800 border-gray-400">OK</button>
+                <button id="custom-msg-cancel" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded font-bold text-white transition hidden">キャンセル</button>
+                <button id="custom-msg-ok" class="Lilice-btn px-6 py-2 rounded font-bold text-white  bg-indigo-600 border-indigo-400">OK</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20260928-light"></script>
+    <script type="module" src="js/app.js?v=20260929-original"></script>
 </body>
 </html>
