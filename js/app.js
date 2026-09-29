@@ -79,6 +79,8 @@ import { LiliceQuizRules } from './rules.js';
         const missLimitRuleId = LiliceQuizRules.defaultMissLimitRule;
         const missLimitRule = LiliceQuizRules.getMissLimitRule(missLimitRuleId);
         let lightweightMode = false;
+        const screenThemes = ['classic', 'muted', 'paper'];
+        let screenTheme = 'classic';
         let winCondition = 3;
         let loseCondition = 2;
         let restQuestions = 1;
@@ -88,6 +90,12 @@ import { LiliceQuizRules } from './rules.js';
             const parsed = Number.parseInt(value, 10);
             if (!Number.isFinite(parsed)) return fallback;
             return Math.min(maximum, Math.max(minimum, parsed));
+        }
+
+        function applyScreenTheme() {
+            document.body.dataset.theme = screenTheme;
+            const selected = document.querySelector(`input[name="screen-theme"][value="${screenTheme}"]`);
+            if (selected) selected.checked = true;
         }
 
         let queue = []; // 早押ししたプレイヤーのid配列
@@ -193,7 +201,7 @@ import { LiliceQuizRules } from './rules.js';
 
         function saveAppState() {
             const state = {
-                players, readerId, systemKeys, mode, scoreRule, lightweightMode, winCondition, loseCondition, restQuestions, nyDisqualification, soundVolumes,
+                players, readerId, systemKeys, mode, scoreRule, lightweightMode, screenTheme, winCondition, loseCondition, restQuestions, nyDisqualification, soundVolumes,
                 duelPlayerIds, duelOpponentChanceFor,
                 soundVolumeDefaultsVersion: SOUND_VOLUME_DEFAULTS_VERSION,
                 matchHistory
@@ -215,15 +223,14 @@ import { LiliceQuizRules } from './rules.js';
                     if (LiliceQuizRules.answerModes.some(rule => rule.id === state.mode)) mode = state.mode;
                     scoreRule = LiliceQuizRules.normalizeScoreRule(state.scoreRule);
                     if (typeof state.lightweightMode === 'boolean') lightweightMode = state.lightweightMode;
+                    if (screenThemes.includes(state.screenTheme)) screenTheme = state.screenTheme;
                     winCondition = clampInteger(state.winCondition, 1, 999, winCondition);
                     loseCondition = clampInteger(state.loseCondition, 0, 99, loseCondition);
                     restQuestions = clampInteger(state.restQuestions, 0, 99, restQuestions);
                     nyDisqualification = clampInteger(state.nyDisqualification, 0, 99, nyDisqualification);
                     if (scoreRule === 'suitei-duel') {
-                        const duelTarget = LiliceQuizRules.getDuelTarget();
-                        if (mode !== 'duel' || winCondition !== duelTarget) soundVolumesMigrated = true;
+                        if (mode !== 'duel') soundVolumesMigrated = true;
                         mode = 'duel';
-                        winCondition = duelTarget;
                     } else if (mode === 'duel') {
                         mode = 'endless';
                         soundVolumesMigrated = true;
@@ -361,9 +368,9 @@ import { LiliceQuizRules } from './rules.js';
             const isFreezeRule = scoreRule === 'freeze';
             const isSwedishRule = scoreRule === 'swedish10';
             const isDuelRule = scoreRule === 'suitei-duel';
-            ui.winScoreInput.disabled = isDuelRule;
-            ui.winScoreInput.title = isDuelRule ? '対決ルールは15点固定' : '';
-            document.getElementById('win-condition-title').textContent = isDuelRule ? '勝ち抜け（15点固定）' : '勝ち抜け';
+            ui.winScoreInput.disabled = false;
+            ui.winScoreInput.title = '';
+            document.getElementById('win-condition-title').textContent = '勝ち抜け';
             const isPointRule = isNYRule || scoreRule === 'up-down';
             const isTenByTenRule = scoreRule === 'ten-by-ten';
             const matchingPreset = LiliceQuizRules.getMatchingRulePreset({
@@ -400,6 +407,7 @@ import { LiliceQuizRules } from './rules.js';
             ui.rulePresetSelect.value = matchingPreset;
             ui.lightweightModeInput.checked = lightweightMode;
             document.body.classList.toggle('lightweight-mode', lightweightMode);
+            applyScreenTheme();
             const modeActiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-cyan-600 text-white border border-cyan-300/60 ';
             const modeInactiveClass = 'flex-1 py-2.5 text-sm font-bold rounded-md bg-slate-800 text-slate-400 border border-slate-600 hover:text-white';
             ui.answerModeOptions.querySelectorAll('[data-answer-mode]').forEach(button => {
@@ -1727,7 +1735,7 @@ import { LiliceQuizRules } from './rules.js';
             scoreRule = ruleId;
             if (scoreRule === 'suitei-duel') mode = 'duel';
             if (scoreRule === 'suitei-duel') {
-                winCondition = LiliceQuizRules.getDuelTarget();
+                winCondition = LiliceQuizRules.getRulePreset('duel-rule').winCondition;
                 loseCondition = 0;
                 restQuestions = 0;
             }
@@ -1792,11 +1800,15 @@ import { LiliceQuizRules } from './rules.js';
             saveAppState();
         });
 
+        let themeBeforeSettings = screenTheme;
+        document.querySelectorAll('input[name="screen-theme"]').forEach(input => {
+            input.addEventListener('change', event => {
+                screenTheme = event.currentTarget.value;
+                applyScreenTheme();
+            });
+        });
+
         ui.winScoreInput.addEventListener('change', (e) => {
-            if (scoreRule === 'suitei-duel') {
-                e.target.value = LiliceQuizRules.getDuelTarget();
-                return;
-            }
             const nextWinCondition = clampInteger(e.target.value, 1, 999, 3);
             if (nextWinCondition === winCondition) {
                 e.target.value = winCondition;
@@ -1875,6 +1887,8 @@ import { LiliceQuizRules } from './rules.js';
         let waitingForSystemKey = null; // 'correct', 'incorrect', 'reset'
 
         document.getElementById('btn-settings').addEventListener('click', () => {
+            themeBeforeSettings = screenTheme;
+            applyScreenTheme();
             editingPlayers = JSON.parse(JSON.stringify(players));
             editingSystemKeys = { ...systemKeys };
             renderSettingsModal();
@@ -1882,6 +1896,9 @@ import { LiliceQuizRules } from './rules.js';
         });
 
         document.getElementById('btn-close-settings').addEventListener('click', () => {
+            screenTheme = themeBeforeSettings;
+            applyScreenTheme();
+            saveAppState();
             ui.settingsModal.classList.add('hidden');
             waitingForSystemKey = null;
         });
