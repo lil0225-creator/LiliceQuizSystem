@@ -37,9 +37,6 @@ const LiliceQuizRules = Object.freeze({
     getRulePreset(id) {
         return rulePresets.find(preset => preset.id === id) || null;
     },
-    getDuelTarget() {
-        return 15;
-    },
     applyDuelCorrect(player, isOpponentResponse) {
         return getScoringRule('suitei-duel').applyCorrect(player, { isOpponentResponse });
     },
