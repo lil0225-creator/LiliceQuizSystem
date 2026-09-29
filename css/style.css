@@ -375,3 +375,118 @@
         body.lightweight-mode .animate-cutin {
             animation: lightweight-cutin 0.4s ease-out forwards !important;
         }
+
+/* Theme choices keep the original palette as the default. */
+.theme-options label { cursor: pointer; min-width: 0; }
+.theme-choice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.5rem;
+    padding: 0.4rem;
+    border: 2px solid #64748b;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.theme-choice-classic { background: #172033; color: #e2e8f0; border-color: #38bdf8; }
+.theme-choice-muted { background: #252d3a; color: #e5e7eb; border-color: #768799; }
+.theme-choice-paper { background: #f3f4f5; color: #24272b; border-color: #cbd5e1; }
+.theme-options input:checked + .theme-choice { outline: 3px solid #67e8f9; outline-offset: 2px; }
+.theme-options input:focus-visible + .theme-choice { outline: 3px solid #fbbf24; outline-offset: 2px; }
+
+body[data-theme="muted"] {
+    --color-page: #171d28;
+    --color-panel: #252d3a;
+    --color-panel-border: #536174;
+    --color-text: #e5e7eb;
+}
+body[data-theme="muted"] .bg-slate-800 { background-color: #293344 !important; }
+body[data-theme="muted"] .bg-slate-900 { background-color: #1d2633 !important; }
+body[data-theme="muted"] .bg-slate-700,
+body[data-theme="muted"] .bg-slate-700\/60,
+body[data-theme="muted"] .bg-slate-700\/50 { background-color: #344051 !important; }
+body[data-theme="muted"] .text-cyan-400,
+body[data-theme="muted"] .text-cyan-300 { color: #9ab4c8 !important; }
+body[data-theme="muted"] .text-cyan-200,
+body[data-theme="muted"] .text-cyan-100 { color: #c4d4df !important; }
+body[data-theme="muted"] .bg-emerald-800 { background-color: #1b6255 !important; }
+body[data-theme="muted"] .bg-rose-800 { background-color: #88405b !important; }
+body[data-theme="muted"] .text-emerald-400 { color: #6bd4a7 !important; }
+body[data-theme="muted"] .text-rose-400 { color: #f393ad !important; }
+body[data-theme="muted"] .drop-shadow-\[0_0_12px_rgba\(52\,211\,153\,0\.8\)\],
+body[data-theme="muted"] .drop-shadow-\[0_0_12px_rgba\(251\,113\,133\,0\.8\)\] { filter: none !important; }
+
+body[data-theme="paper"] {
+    --color-page: #f3f4f5;
+    --color-panel: #fff;
+    --color-panel-border: #d9dde2;
+    --color-text: #24272b;
+    color-scheme: light;
+}
+body[data-theme="paper"] .bg-slate-900,
+body[data-theme="paper"] .bg-slate-900\/60 { background-color: #f5f6f7 !important; }
+body[data-theme="paper"] .bg-slate-800 { background-color: #fff !important; }
+body[data-theme="paper"] .bg-slate-700,
+body[data-theme="paper"] .bg-slate-700\/60,
+body[data-theme="paper"] .bg-slate-700\/50,
+body[data-theme="paper"] .bg-slate-700\/40,
+body[data-theme="paper"] .bg-slate-700\/30 { background-color: #f1f3f5 !important; }
+body[data-theme="paper"] .text-white,
+body[data-theme="paper"] .text-slate-200,
+body[data-theme="paper"] .text-slate-300 { color: #24272b !important; }
+body[data-theme="paper"] .text-slate-400,
+body[data-theme="paper"] .text-slate-500 { color: #67717f !important; }
+body[data-theme="paper"] .text-cyan-400,
+body[data-theme="paper"] .text-cyan-300,
+body[data-theme="paper"] .text-cyan-200,
+body[data-theme="paper"] .text-cyan-100 { color: #31536d !important; }
+body[data-theme="paper"] .border-cyan-500,
+body[data-theme="paper"] .border-cyan-700,
+body[data-theme="paper"] .border-cyan-800,
+body[data-theme="paper"] .border-slate-500,
+body[data-theme="paper"] .border-slate-600 { border-color: #d1d5db !important; }
+body[data-theme="paper"] .bg-cyan-900\/70,
+body[data-theme="paper"] .bg-cyan-950\/40 { background-color: #e9eff3 !important; }
+body[data-theme="paper"] .bg-cyan-600,
+body[data-theme="paper"] .Lilice-btn { background: #334155 !important; color: #fff !important; }
+body[data-theme="paper"] .bg-cyan-600.text-white { color: #fff !important; }
+body[data-theme="paper"] .bg-emerald-800,
+body[data-theme="paper"] .bg-emerald-950,
+body[data-theme="paper"] .bg-emerald-950\/80 { background-color: #e8f6f0 !important; }
+body[data-theme="paper"] .bg-rose-800,
+body[data-theme="paper"] .bg-rose-950,
+body[data-theme="paper"] .bg-rose-950\/80 { background-color: #fceef1 !important; }
+body[data-theme="paper"] .bg-amber-950,
+body[data-theme="paper"] .bg-amber-900\/50 { background-color: #fdf6e8 !important; }
+body[data-theme="paper"] .bg-rose-900\/50 { background-color: #fae7ec !important; }
+body[data-theme="paper"] .text-emerald-400,
+body[data-theme="paper"] .text-emerald-300,
+body[data-theme="paper"] .text-emerald-50 { color: #08765b !important; }
+body[data-theme="paper"] .text-rose-400,
+body[data-theme="paper"] .text-rose-300,
+body[data-theme="paper"] .text-rose-50 { color: #a51943 !important; }
+body[data-theme="paper"] .text-amber-300,
+body[data-theme="paper"] .text-amber-400 { color: #805a15 !important; }
+body[data-theme="paper"] .player-key-capture-state,
+body[data-theme="paper"] .player-assigned-key { color: rgba(55,65,81,.4); }
+body[data-theme="paper"] .player-rest-count { background: #e5e7eb; color: #374151; }
+body[data-theme="paper"] .duel-response-label { color: #31536d; }
+body[data-theme="paper"] .drop-shadow-\[0_0_12px_rgba\(52\,211\,153\,0\.8\)\],
+body[data-theme="paper"] .drop-shadow-\[0_0_12px_rgba\(251\,113\,133\,0\.8\)\] { filter: none !important; }
+body[data-theme="paper"] .bg-cyan-500 { background: #334155 !important; color: #fff !important; }
+body[data-theme="paper"] .bg-slate-600 { background: #e5e7eb !important; color: #24272b !important; }
+body[data-theme="paper"] .Lilice-btn:hover { background: #475569 !important; }
+body[data-theme="paper"] .text-cyan-50,
+body[data-theme="paper"] .text-cyan-500\/50 { color: #45657b !important; }
+body[data-theme="paper"] .text-amber-200 { color: #805a15 !important; }
+body[data-theme="paper"] .text-rose-200,
+body[data-theme="paper"] .text-rose-500 { color: #a51943 !important; }
+body[data-theme="paper"] .bg-slate-700\/80 { background-color: #f1f3f5 !important; }
+body[data-theme="paper"] .bg-amber-950\/50,
+body[data-theme="paper"] .bg-amber-900\/50 { background-color: #fdf6e8 !important; }
+body[data-theme="paper"] #result-overlay { background: rgba(255,255,255,.97) !important; }
+body[data-theme="paper"] #cutin-text { color: #fff !important; }
+body[data-theme="paper"] .player-name-key-target:hover { background: #eef2f5; outline-color: #475569; }
+body[data-theme="paper"] .Lilice-panel { box-shadow: none; }
