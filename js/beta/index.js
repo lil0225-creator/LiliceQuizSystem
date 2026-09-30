@@ -44,7 +44,7 @@ export function createBetaMode({ root, storage = localStorage, features = betaFe
         if (enabled) {
             try {
                 for (const feature of features) {
-                    const cleanup = feature.mount({ root, host });
+                    const cleanup = feature.mount({ root, host, storage });
                     if (typeof cleanup !== 'function') throw new Error('Beta feature must return a cleanup function');
                     cleanups.push(cleanup);
                 }
