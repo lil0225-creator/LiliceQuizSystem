@@ -215,3 +215,32 @@ test('ベータのパスワード判定・解放・OFFの保存', async () => {
     assert.deepEqual(app.errors, []);
     app.dom.window.close();
 });
+
+test('全解答モードでリセット後に名前を残さず、次の早押しを表示する', () => {
+    for (const mode of ['single', 'endless', 'second', 'duel']) {
+        const app = boot({ beta: false });
+        const doc = app.doc;
+        const style = doc.createElement('style');
+        style.textContent =
+            fs.readFileSync('css/utilities.css', 'utf8') +
+            fs.readFileSync('css/style.css', 'utf8').replace(/@import url\([^)]*\);/g, '');
+        doc.head.append(style);
+        doc.getElementById('rule-summary').click();
+        if (mode === 'duel') app.change('rule-preset', 'duel-rule');
+        else doc.querySelector(`[data-answer-mode="${mode}"]`).click();
+        doc.getElementById('btn-close-rule-settings').click();
+        app.press('2');
+        const answerer = doc.getElementById('current-answerer');
+        assert.match(answerer.textContent, /プレイヤー2/, mode);
+        assert.notEqual(app.dom.window.getComputedStyle(answerer).display, 'none', mode);
+        doc.getElementById('btn-reset').click();
+        assert.equal(app.dom.window.getComputedStyle(answerer).display, 'none', mode);
+        assert.equal(answerer.textContent, '', mode);
+        assert.equal(doc.getElementById('status-display').textContent, 'WAITING...', mode);
+        app.press('2');
+        assert.match(answerer.textContent, /プレイヤー2/, mode);
+        assert.notEqual(app.dom.window.getComputedStyle(answerer).display, 'none', mode);
+        assert.deepEqual(app.errors, []);
+        app.dom.window.close();
+    }
+});

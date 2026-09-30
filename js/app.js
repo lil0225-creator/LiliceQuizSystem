@@ -1368,6 +1368,7 @@ function updateDisplay() {
               ? 'NO ONE LEFT... (PRESS RESET)'
               : 'WAITING...';
         ui.statusDisplay.classList.remove('hidden');
+        ui.currentAnswerer.replaceChildren();
         ui.currentAnswerer.classList.add('hidden');
         ui.currentAnswerer.classList.remove('animate-flash');
         ui.btnCorrect.classList.toggle('opacity-50', waitingForDuelOpponent);
@@ -1396,6 +1397,7 @@ function updateDisplay() {
         // 解答者がいない待機状態 (エンドレスで全員不正解など)
         ui.statusDisplay.textContent = 'NO ONE LEFT... (PRESS RESET)';
         ui.statusDisplay.classList.remove('hidden');
+        ui.currentAnswerer.replaceChildren();
         ui.currentAnswerer.classList.add('hidden');
         ui.currentAnswerer.classList.remove('animate-flash');
 
