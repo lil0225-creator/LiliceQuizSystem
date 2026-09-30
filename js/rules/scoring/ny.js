@@ -11,10 +11,12 @@ export default Object.freeze({
         player.incorrect++;
     },
     isDisqualified(player, settings) {
-        return settings.nyDisqualification > 0
-            && player.correct - player.incorrect <= -settings.nyDisqualification;
+        return (
+            settings.nyDisqualification > 0 &&
+            player.correct - player.incorrect <= -settings.nyDisqualification
+        );
     },
     getPresentation(player) {
         return { type: 'points', value: player.correct - player.incorrect };
-    }
+    },
 });

@@ -13,13 +13,17 @@ export default Object.freeze({
     applyIncorrect(player, settings) {
         player.incorrect++;
         if (settings.isOpponentResponse) return 0;
-        if (settings.opponent) settings.opponent.duelPoints = (settings.opponent.duelPoints || 0) + 1;
+        if (settings.opponent)
+            settings.opponent.duelPoints = (settings.opponent.duelPoints || 0) + 1;
         return 1;
     },
     isDisqualified() {
         return false;
     },
     getPresentation(player) {
-        return { type: 'points', value: Number.isFinite(player.duelPoints) ? player.duelPoints : 0 };
-    }
+        return {
+            type: 'points',
+            value: Number.isFinite(player.duelPoints) ? player.duelPoints : 0,
+        };
+    },
 });

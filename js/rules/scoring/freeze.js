@@ -16,5 +16,5 @@ export default Object.freeze({
     },
     getPresentation(player) {
         return { type: 'marks', correct: player.correct, incorrect: player.incorrect };
-    }
+    },
 });

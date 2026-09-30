@@ -16,7 +16,9 @@ export const buzzerNameSpeech = {
             if (typeof saved?.volume === 'number' && Number.isFinite(saved.volume)) {
                 volume = Math.min(1, Math.max(0, saved.volume));
             }
-        } catch { /* 保存データがない場合は既定値。 */ }
+        } catch {
+            /* 保存データがない場合は既定値。 */
+        }
 
         const section = doc.createElement('section');
         section.id = 'beta-name-speech-settings';
@@ -49,8 +51,11 @@ export const buzzerNameSpeech = {
         message.textContent = supported ? hint : 'このブラウザは名前の読み上げに対応していません。';
 
         function save() {
-            try { storage.setItem(STORAGE_KEY, JSON.stringify({ enabled, volume })); }
-            catch { message.textContent = '設定を保存できませんでした。再読み込みすると元に戻ります。'; }
+            try {
+                storage.setItem(STORAGE_KEY, JSON.stringify({ enabled, volume }));
+            } catch {
+                message.textContent = '設定を保存できませんでした。再読み込みすると元に戻ります。';
+            }
         }
 
         function stop() {
@@ -66,25 +71,30 @@ export const buzzerNameSpeech = {
             const utterance = new view.SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
             utterance.volume = volume;
-            const japaneseVoices = synth.getVoices().filter(voice => /^ja(?:[-_]|$)/i.test(voice.lang));
-            const voice = japaneseVoices.find(voice => voice.localService) || japaneseVoices[0];
+            const japaneseVoices = synth
+                .getVoices()
+                .filter((voice) => /^ja(?:[-_]|$)/i.test(voice.lang));
+            const voice = japaneseVoices.find((voice) => voice.localService) || japaneseVoices[0];
             if (voice) utterance.voice = voice;
             utterance.onend = () => pending.delete(utterance);
-            utterance.onerror = event => {
+            utterance.onerror = (event) => {
                 if (!pending.delete(utterance) || !active) return;
                 if (!['canceled', 'interrupted'].includes(event.error)) {
-                    message.textContent = '読み上げできませんでした。「テスト」で音声を確認してください。';
+                    message.textContent =
+                        '読み上げできませんでした。「テスト」で音声を確認してください。';
                 }
             };
             pending.add(utterance);
-            try { synth.speak(utterance); }
-            catch {
+            try {
+                synth.speak(utterance);
+            } catch {
                 pending.delete(utterance);
-                message.textContent = '読み上げできませんでした。「テスト」で音声を確認してください。';
+                message.textContent =
+                    '読み上げできませんでした。「テスト」で音声を確認してください。';
             }
         }
 
-        const onBuzz = event => speak(event.detail?.name);
+        const onBuzz = (event) => speak(event.detail?.name);
         root.addEventListener('lilice:buzz', onBuzz);
         root.addEventListener('lilice:buzzer-reset', stop);
         view.addEventListener('pagehide', stop);
@@ -114,5 +124,5 @@ export const buzzerNameSpeech = {
             view.removeEventListener('pagehide', stop);
             section.remove();
         };
-    }
+    },
 };

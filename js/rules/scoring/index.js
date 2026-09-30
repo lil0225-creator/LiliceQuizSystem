@@ -15,5 +15,5 @@ export const scoringRules = Object.freeze([
     freeze,
     swedish10,
     tenByTen,
-    duel
+    duel,
 ]);
