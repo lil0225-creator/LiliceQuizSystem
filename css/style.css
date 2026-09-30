@@ -988,3 +988,8 @@ body[data-theme='paper'] .beta-switch:focus-visible {
     outline: 2px solid #ff6b7b;
     outline-offset: 2px;
 }
+
+/* 表示用の flex/grid 指定より、画面の非表示状態を優先する。 */
+.hidden {
+    display: none !important;
+}
