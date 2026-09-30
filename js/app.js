@@ -1520,9 +1520,9 @@ import { LiliceQuizRules } from './rules.js';
                         ? 'th'
                         : ({ 1: 'st', 2: 'nd', 3: 'rd' }[position % 10] || 'th');
                     const orderStr = `${position}${suffix}`;
-                    const badgeClass = isFirst ? 'bg-cyan-500 text-slate-900 ' : 'bg-slate-600 text-white border border-slate-500';
+                    const badgeClass = isFirst ? 'bg-cyan-500 text-white ' : 'bg-slate-600 text-white border border-slate-500';
                     const badgeSize = compactPlayerList ? 'ml-1 px-1.5 py-0.5 text-xs' : 'ml-3 px-3 py-1 text-lg';
-                    orderBadge = `<span class="${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
+                    orderBadge = `<span class="buzz-order-badge ${badgeSize} rounded-full font-Lilice font-bold align-middle ${badgeClass}">${orderStr}</span>`;
                 }
                 const restCountBadge = p.restQuestionsRemaining > 0
                     ? `<span class="player-rest-count">あと${p.restQuestionsRemaining}問</span>`
