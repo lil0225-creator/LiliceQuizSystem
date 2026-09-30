@@ -1026,6 +1026,7 @@ import { createBetaMode } from './beta/index.js';
                     buzzOrder.push(player.id);
                     queue.push(player.id);
                     updateDisplay();
+                    announceBuzzer(player.id);
                 }
             }
         });
@@ -1282,6 +1283,13 @@ import { createBetaMode } from './beta/index.js';
         });
 
         // 早押し実行
+        function announceBuzzer(playerId) {
+            const player = players.find(player => player.id === playerId);
+            if (player) document.body.dispatchEvent(new CustomEvent('lilice:buzz', {
+                detail: { playerId: player.id, name: player.name }
+            }));
+        }
+
         function pushBuzzer(playerId) {
             saveState(); // 誰かが押した瞬間の状態を保存(直前に戻せるように)
             queue.push(playerId);
@@ -1290,9 +1298,11 @@ import { createBetaMode } from './beta/index.js';
             currentAnsweringIndex = queue.length - 1;
             playSound('buzzer');
             updateDisplay();
+            announceBuzzer(playerId);
         }
 
         function resetBuzzer(shouldSaveState = true, completesQuestion = true) {
+            document.body.dispatchEvent(new CustomEvent('lilice:buzzer-reset'));
             if (shouldSaveState && queue.length > 0) saveState();
             if (completesQuestion) completeQuestion();
             queue = [];
