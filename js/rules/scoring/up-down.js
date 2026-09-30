@@ -16,6 +16,9 @@ export default Object.freeze({
         return settings.loseCondition > 0 && player.incorrect >= settings.loseCondition;
     },
     getPresentation(player) {
-        return { type: 'points', value: Number.isFinite(player.upDownScore) ? player.upDownScore : player.correct };
-    }
+        return {
+            type: 'points',
+            value: Number.isFinite(player.upDownScore) ? player.upDownScore : player.correct,
+        };
+    },
 });

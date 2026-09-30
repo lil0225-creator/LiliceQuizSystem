@@ -1,0 +1,20 @@
+{
+    "name": "lilice-quiz-system",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "tailwindcss -i css/tailwind.css -o css/utilities.css --minify",
+        "test": "node --test tests/*.test.cjs",
+        "check": "npm run build && npm test",
+        "dev": "python3 -m http.server 8000",
+        "format": "prettier --write index.html css/style.css css/tailwind.css \"js/**/*.js\" \"tests/*.cjs\" README.md package.json tailwind.config.cjs",
+        "format:check": "prettier --check index.html css/style.css css/tailwind.css \"js/**/*.js\" \"tests/*.cjs\" README.md package.json tailwind.config.cjs"
+    },
+    "devDependencies": {
+        "esbuild": "0.25.10",
+        "jsdom": "26.1.0",
+        "prettier": "3.6.2",
+        "tailwindcss": "3.4.17"
+    }
+}

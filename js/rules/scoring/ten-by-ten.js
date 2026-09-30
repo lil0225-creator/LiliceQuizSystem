@@ -21,5 +21,5 @@ export default Object.freeze({
     getPresentation(player, settings) {
         const beta = getBeta(player, settings);
         return { type: 'product', alpha: player.correct, beta, value: player.correct * beta };
-    }
+    },
 });

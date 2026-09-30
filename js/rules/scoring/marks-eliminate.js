@@ -11,11 +11,13 @@ export default Object.freeze({
         player.incorrect++;
     },
     isDisqualified(player, settings) {
-        return settings.missLimitRuleId !== 'reduce-correct'
-            && settings.loseCondition > 0
-            && player.incorrect >= settings.loseCondition;
+        return (
+            settings.missLimitRuleId !== 'reduce-correct' &&
+            settings.loseCondition > 0 &&
+            player.incorrect >= settings.loseCondition
+        );
     },
     getPresentation(player) {
         return { type: 'marks', correct: player.correct, incorrect: player.incorrect };
-    }
+    },
 });

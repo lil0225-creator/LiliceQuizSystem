@@ -16,12 +16,20 @@ export default Object.freeze({
     },
     applyIncorrect(player) {
         player.incorrect++;
-        player.swedishPenaltyMarks = (player.swedishPenaltyMarks || 0) + getSwedishPenalty(player.correct);
+        player.swedishPenaltyMarks =
+            (player.swedishPenaltyMarks || 0) + getSwedishPenalty(player.correct);
     },
     isDisqualified(player, settings) {
-        return settings.loseCondition > 0 && (player.swedishPenaltyMarks || 0) >= settings.loseCondition;
+        return (
+            settings.loseCondition > 0 &&
+            (player.swedishPenaltyMarks || 0) >= settings.loseCondition
+        );
     },
     getPresentation(player) {
-        return { type: 'penalty-marks', correct: player.correct, penaltyMarks: player.swedishPenaltyMarks || 0 };
-    }
+        return {
+            type: 'penalty-marks',
+            correct: player.correct,
+            penaltyMarks: player.swedishPenaltyMarks || 0,
+        };
+    },
 });
