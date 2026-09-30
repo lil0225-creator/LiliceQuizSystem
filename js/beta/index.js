@@ -1,4 +1,4 @@
-import { betaFeatures } from './features/index.js';
+import { betaFeatures } from './features/index.js?v=20261001-beta-speech-v2';
 
 const STORAGE_KEY = 'LiliceQuizBeta';
 const PASSWORD_HASH = 'f8db290fb696545069d127d9c97fff38e7266eb28d5769e888a6fef74d3e929b';
