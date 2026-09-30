@@ -1,4 +1,5 @@
 import { LiliceQuizRules } from './rules.js';
+import { createBetaMode } from './beta/index.js';
 
 // --- 状態管理 (State) ---
         let players = [
@@ -1884,6 +1885,7 @@ import { LiliceQuizRules } from './rules.js';
         let waitingForSystemKey = null; // 'correct', 'incorrect', 'reset'
 
         document.getElementById('btn-settings').addEventListener('click', () => {
+            betaMode.refresh();
             themeBeforeSettings = screenTheme;
             applyScreenTheme();
             editingPlayers = JSON.parse(JSON.stringify(players));
@@ -1893,6 +1895,7 @@ import { LiliceQuizRules } from './rules.js';
         });
 
         document.getElementById('btn-close-settings').addEventListener('click', () => {
+            betaMode.refresh();
             screenTheme = themeBeforeSettings;
             applyScreenTheme();
             saveAppState();
@@ -1940,6 +1943,7 @@ import { LiliceQuizRules } from './rules.js';
             updateButtonLabels();
             renderReaderPicker();
             renderDuelPlayerOptions();
+            betaMode.refresh();
             saveAppState(); // 保存して閉じたときに状態を記録
         });
 
@@ -2072,4 +2076,5 @@ import { LiliceQuizRules } from './rules.js';
         }
 
         // 初期化実行
+        const betaMode = createBetaMode({ root: document.body });
         initializeApp();

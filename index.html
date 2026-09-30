@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LiliceQuizSystem</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="css/style.css?v=20261001-settings-match">
+    <link rel="stylesheet" href="css/style.css?v=20261001-beta">
 </head>
 <body data-theme="classic" class="h-screen w-screen flex flex-col p-4 relative">
 
@@ -277,6 +277,24 @@
                     </label>
                 </section>
 
+                <section id="beta-settings" aria-labelledby="beta-settings-title">
+                    <h3 id="beta-settings-title" class="text-lg font-Lilice text-cyan-300 mb-2 border-b border-slate-700 pb-1">BETA / ベータモード</h3>
+                    <div id="beta-unlock-controls" class="beta-settings-surface rounded-lg border border-slate-600 p-3">
+                        <label for="beta-password" class="block text-sm text-white mb-2">解放パスワード</label>
+                        <div class="flex gap-2">
+                            <input id="beta-password" type="password" autocomplete="off" spellcheck="false" class="flex-1 min-w-0 rounded border border-slate-500 bg-slate-800 px-3 py-2 text-sm text-white" aria-describedby="beta-message">
+                            <button id="btn-unlock-beta" type="button" class="Lilice-btn rounded px-4 py-2 text-sm font-bold text-white">解放</button>
+                        </div>
+                    </div>
+                    <label id="beta-toggle-controls" for="beta-mode" class="hidden beta-settings-surface flex items-center justify-between gap-4 rounded-lg border border-slate-600 p-3">
+                        <span class="text-sm font-bold text-white">ベータモード <span id="beta-mode-state" class="ml-2 text-cyan-200">OFF</span></span>
+                        <input id="beta-mode" type="checkbox" role="switch" class="beta-switch" aria-describedby="beta-message">
+                    </label>
+                    <p id="beta-message" class="mt-2 text-sm text-slate-300" role="status" aria-live="polite"></p>
+                    <p class="mt-1 text-xs text-slate-400">解放・切り替えはすぐに反映され、このブラウザに保存されます。</p>
+                    <div id="beta-features" class="hidden mt-3 space-y-3"></div>
+                </section>
+
                 <!-- システムキー設定 -->
                 <section>
                     <h3 class="text-lg font-Lilice text-amber-400 mb-2 border-b border-slate-700 pb-1">SYSTEM KEYS (システムキー割り当て)</h3>
@@ -410,6 +428,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js?v=20261001-contrast-review"></script>
+    <script type="module" src="js/app.js?v=20261001-beta"></script>
 </body>
 </html>
