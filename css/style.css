@@ -391,9 +391,10 @@ body[data-theme="classic"] {
     --color-text: #e0f7fa;
     --color-panel: var(--panel);
     --color-panel-border: var(--neon);
-    background-image: url("../assets/orifice-kage.png"), radial-gradient(circle at center, var(--bg1), var(--bg2), var(--bg3));
+    background-image: url("../assets/orifice-background.png"), radial-gradient(circle at center, var(--bg1), var(--bg2), var(--bg3));
     background-repeat: no-repeat;
     background-position: center;
+    background-attachment: fixed, scroll;
     background-size: contain;
     color-scheme: dark;
 }
@@ -632,3 +633,81 @@ body[data-theme="paper"] .player-key-capture-state,
 body[data-theme="paper"] .player-assigned-key { color: #67717f; }
 body[data-theme="classic"] #player-list > .bg-rose-900\/50 { color: #ff6b7b !important; }
 #player-list > div.opacity-50 { opacity: 1; }
+
+/* Settings share the main theme, with distinct surfaces for editable fields. */
+body:not([data-theme="paper"]) #settings-modal {
+    --settings-panel: #192b34;
+    --settings-section: #253e49;
+    --settings-input: #0f2027;
+    --settings-border: #648894;
+    --settings-text: #edf4f6;
+    --settings-muted: #bdced4;
+    --settings-heading: #b9e2eb;
+}
+body[data-theme="classic"] #settings-modal {
+    --settings-panel: #142832;
+    --settings-section: var(--bg2);
+    --settings-input: var(--bg1);
+    --settings-border: var(--neon);
+    --settings-text: #e0f7fa;
+    --settings-muted: #bdd3d9;
+    --settings-heading: var(--neon);
+}
+body:not([data-theme="paper"]) #settings-modal > div {
+    background-color: var(--settings-panel) !important;
+    border-color: var(--settings-border) !important;
+    color: var(--settings-text);
+}
+body:not([data-theme="paper"]) #settings-modal :is(h2, h3).font-Lilice {
+    color: var(--settings-heading) !important;
+    border-color: var(--settings-border) !important;
+}
+body:not([data-theme="paper"]) #settings-modal :is(.text-emerald-400, .text-amber-400, .text-white, .text-slate-300) {
+    color: var(--settings-text) !important;
+}
+body:not([data-theme="paper"]) #settings-modal :is(.text-slate-400, .text-slate-500) {
+    color: var(--settings-muted) !important;
+}
+body:not([data-theme="paper"]) #settings-modal :is(#sound-inputs-container, #system-keys-container, label[for="screen-theme"], label[for="lightweight-mode"]) {
+    background-color: var(--settings-section) !important;
+    border-color: var(--settings-border) !important;
+}
+body:not([data-theme="paper"]) #settings-modal :is(input:not([type="range"]):not([type="checkbox"]), select) {
+    background-color: var(--settings-input) !important;
+    color: var(--settings-text) !important;
+    border-color: var(--settings-border) !important;
+}
+body:not([data-theme="paper"]) #settings-modal input[type="file"]::file-selector-button {
+    background-color: #345966;
+    color: #edf4f6;
+}
+body:not([data-theme="paper"]) #settings-modal input[type="file"]::file-selector-button:hover {
+    background-color: #406b79;
+}
+body:not([data-theme="paper"]) #settings-modal :is(input[type="range"], input[type="checkbox"]) {
+    accent-color: #9acbd5;
+}
+body:not([data-theme="paper"]) #settings-modal :is(#btn-close-settings, #btn-add-player) {
+    background-color: #345966 !important;
+    border-color: var(--settings-border) !important;
+}
+body:not([data-theme="paper"]) #settings-modal :is(#btn-close-settings, #btn-add-player):hover {
+    background-color: #406b79 !important;
+}
+body[data-theme="classic"] #settings-modal input[type="file"]::file-selector-button {
+    background-color: #006978;
+    color: #fff;
+}
+body[data-theme="classic"] #settings-modal input[type="file"]::file-selector-button:hover {
+    background-color: #005763;
+}
+body[data-theme="classic"] #settings-modal :is(input[type="range"], input[type="checkbox"]) {
+    accent-color: var(--neon);
+}
+body[data-theme="classic"] #settings-modal :is(#btn-close-settings, #btn-add-player) {
+    background-color: #006978 !important;
+    color: #fff !important;
+}
+body[data-theme="classic"] #settings-modal :is(#btn-close-settings, #btn-add-player):hover {
+    background-color: #005763 !important;
+}
