@@ -1,5 +1,5 @@
 import { LiliceQuizRules } from './rules.js';
-import { createBetaMode } from './beta/index.js';
+import { createBetaMode } from './beta/index.js?v=20261001-beta-speech-v2';
 
 // --- 状態管理 (State) ---
         let players = [
